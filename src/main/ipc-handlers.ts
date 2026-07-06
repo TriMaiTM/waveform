@@ -1,4 +1,4 @@
-import { ipcMain, dialog } from 'electron'
+import { ipcMain, dialog, shell } from 'electron'
 import fs from 'fs'
 import path from 'path'
 import { scanLibrary, getMusicDirectory, getLyricsForTrack } from './library-scanner'
@@ -223,5 +223,91 @@ export function registerIPCHandlers(): void {
       console.error('[DB] Failed to get recently played:', err)
       return []
     }
+  })
+
+  // Delete track: delete file from disk and remove from DB
+  ipcMain.handle('delete-track-file', async (_event, trackId: number) => {
+    const db = getDB()
+    const track = db.prepare('SELECT file_path FROM tracks WHERE id = ?').get(trackId) as { file_path: string } | undefined
+    if (track) {
+      try {
+        if (fs.existsSync(track.file_path)) {
+          fs.unlinkSync(track.file_path)
+          console.log(`[IPC] Successfully deleted track file: ${track.file_path}`)
+        }
+      } catch (err) {
+        console.error(`[IPC] Failed to delete physical file ${track.file_path}:`, err)
+      }
+      // Delete database entries
+      db.transaction(() => {
+        db.prepare('DELETE FROM playlist_tracks WHERE track_id = ?').run(trackId)
+        db.prepare('DELETE FROM recently_played WHERE track_id = ?').run(trackId)
+        db.prepare('DELETE FROM tracks WHERE id = ?').run(trackId)
+      })()
+    }
+    
+    // Return remaining tracks in library
+    const rows = db.prepare('SELECT * FROM tracks').all() as any[]
+    return rows.map(row => ({
+      id: row.id,
+      filePath: row.file_path,
+      title: row.title,
+      artist: row.artist,
+      album: row.album,
+      durationSeconds: row.duration_seconds,
+      coverPath: row.cover_path,
+      isFavorite: row.is_favorite || 0
+    }))
+  })
+
+  // Open music folder in Windows Explorer
+  ipcMain.handle('open-music-folder', async () => {
+    const musicDir = getMusicDirectory()
+    if (!fs.existsSync(musicDir)) {
+      fs.mkdirSync(musicDir, { recursive: true })
+    }
+    await shell.openPath(musicDir)
+    return true
+  })
+
+  // Get current music library directory path
+  ipcMain.handle('get-music-directory', async () => {
+    return getMusicDirectory()
+  })
+
+  // Select custom music folder
+  ipcMain.handle('select-music-directory', async () => {
+    const result = await dialog.showOpenDialog({
+      title: 'Chọn thư mục chứa thư viện nhạc của bạn',
+      properties: ['openDirectory', 'createDirectory']
+    })
+    
+    if (result.canceled || result.filePaths.length === 0) {
+      return null
+    }
+
+    const selectedPath = result.filePaths[0]
+    const db = getDB()
+    try {
+      db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('music_directory', ?)")
+        .run(selectedPath)
+      console.log(`[IPC] Music library folder changed to: ${selectedPath}`)
+      return selectedPath
+    } catch (err) {
+      console.error('[DB] Failed to save custom music_directory:', err)
+      return null
+    }
+  })
+
+  // Reset music library folder to default
+  ipcMain.handle('reset-music-directory', async () => {
+    const db = getDB()
+    try {
+      db.prepare("DELETE FROM settings WHERE key = 'music_directory'").run()
+      console.log('[IPC] Music library folder reset to default.')
+    } catch (err) {
+      console.error('[DB] Failed to delete custom music_directory setting:', err)
+    }
+    return getMusicDirectory()
   })
 }

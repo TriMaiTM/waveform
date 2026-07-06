@@ -1,6 +1,6 @@
 import React from 'react'
 import { Playlist } from '../../shared/types'
-import { IoFlash, IoMusicalNotes, IoHeart, IoAdd, IoMusicalNote, IoTimeOutline, IoOptionsOutline } from 'react-icons/io5'
+import { IoFlash, IoMusicalNotes, IoHeart, IoAdd, IoMusicalNote, IoTimeOutline, IoOptionsOutline, IoSettingsOutline } from 'react-icons/io5'
 
 interface SidebarProps {
   activeTab: string;
@@ -55,6 +55,14 @@ export default function Sidebar({ activeTab, setActiveTab, playlists, onCreatePl
         >
           <IoOptionsOutline size={20} />
           <span>Equalizer (EQ)</span>
+        </button>
+
+        <button 
+          className={`sidebar-nav-item ${activeTab === 'settings' ? 'active' : ''}`}
+          onClick={() => setActiveTab('settings')}
+        >
+          <IoSettingsOutline size={20} />
+          <span>Cài đặt</span>
         </button>
       </nav>
 

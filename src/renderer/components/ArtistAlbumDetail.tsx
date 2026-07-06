@@ -21,6 +21,7 @@ interface ArtistAlbumDetailProps {
   playlists: Playlist[];
   onAddTrackToPlaylist: (playlistId: number, trackId: number) => Promise<void>;
   onCreatePlaylist: () => void;
+  onDeleteTrack: (track: Track) => Promise<void>;
   onClose: () => void;
 }
 
@@ -34,6 +35,7 @@ export default function ArtistAlbumDetail({
   playlists,
   onAddTrackToPlaylist,
   onCreatePlaylist,
+  onDeleteTrack,
   onClose
 }: ArtistAlbumDetailProps) {
   const [activeTrackForPlaylistMenu, setActiveTrackForPlaylistMenu] = useState<number | null>(null)
@@ -284,6 +286,17 @@ export default function ArtistAlbumDetail({
                               + Tạo playlist mới
                             </button>
                           )}
+                          <div className="dropdown-divider"></div>
+                          <button 
+                            className="dropdown-item delete-highlight"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onDeleteTrack(track)
+                              setActiveTrackForPlaylistMenu(null)
+                            }}
+                          >
+                            Xóa khỏi thư viện
+                          </button>
                         </div>
                       )}
                     </div>

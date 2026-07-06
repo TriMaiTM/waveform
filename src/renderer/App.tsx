@@ -175,6 +175,7 @@ function AppContent() {
   // Recently Played state
   const [recentlyTracks, setRecentlyTracks] = useState<Track[]>([])
   const recordedTracksRef = useRef<Set<number>>(new Set())
+  const [musicDir, setMusicDir] = useState<string>('')
 
   const loadRecentlyPlayed = async () => {
     try {
@@ -223,6 +224,10 @@ function AppContent() {
         // Load existing playlists
         const existingPlaylists = await window.api.getPlaylists()
         setPlaylists(existingPlaylists)
+
+        // Get music folder directory
+        const dir = await window.api.getMusicDirectory()
+        setMusicDir(dir)
 
         // Scan library
         const initialTracks = await window.api.scanLibrary()
@@ -379,6 +384,67 @@ function AppContent() {
     } catch (err) {
       console.error('Failed to rescan library:', err)
       setStatusMessage('Quét lại thư viện thất bại.')
+      setTimeout(() => setStatusMessage(''), 3000)
+    } finally {
+      setIsScanning(false)
+    }
+  }
+
+  const handleDeleteTrackFileConfirm = async (track: Track) => {
+    const confirmDelete = window.confirm(`Bạn có chắc chắn muốn xóa bài hát "${track.title}" khỏi thư viện và xóa file vật lý trên ổ đĩa không?`)
+    if (!confirmDelete) return
+
+    setIsScanning(true)
+    setStatusMessage(`Đang xóa "${track.title}"...`)
+    try {
+      const remainingTracks = await window.api.deleteTrackFile(track.id)
+      setTracks(remainingTracks)
+      setPlaylistTracks(prev => prev.filter(t => t.id !== track.id))
+      setStatusMessage('Đã xóa bài hát thành công!')
+      setTimeout(() => setStatusMessage(''), 3000)
+    } catch (err) {
+      console.error('Failed to delete track file:', err)
+      setStatusMessage('Xóa bài hát thất bại.')
+      setTimeout(() => setStatusMessage(''), 3000)
+    } finally {
+      setIsScanning(false)
+    }
+  }
+
+  const handleChangeMusicDir = async () => {
+    const selected = await window.api.selectMusicDirectory()
+    if (selected) {
+      setMusicDir(selected)
+      setIsScanning(true)
+      setStatusMessage('Đang quét thư mục nhạc mới...')
+      try {
+        const updatedTracks = await window.api.scanLibrary()
+        setTracks(updatedTracks)
+        setStatusMessage('Đã chuyển thư mục và quét xong!')
+        setTimeout(() => setStatusMessage(''), 3000)
+      } catch (err) {
+        console.error('Failed to scan new music directory:', err)
+        setStatusMessage('Quét thư mục mới thất bại.')
+        setTimeout(() => setStatusMessage(''), 3000)
+      } finally {
+        setIsScanning(false)
+      }
+    }
+  }
+
+  const handleResetMusicDir = async () => {
+    const defaultDir = await window.api.resetMusicDirectory()
+    setMusicDir(defaultDir)
+    setIsScanning(true)
+    setStatusMessage('Đang quét lại thư mục nhạc mặc định...')
+    try {
+      const updatedTracks = await window.api.scanLibrary()
+      setTracks(updatedTracks)
+      setStatusMessage('Đã đặt lại thư mục mặc định!')
+      setTimeout(() => setStatusMessage(''), 3000)
+    } catch (err) {
+      console.error('Failed to scan default music directory:', err)
+      setStatusMessage('Quét thư mục mặc định thất bại.')
       setTimeout(() => setStatusMessage(''), 3000)
     } finally {
       setIsScanning(false)
@@ -550,8 +616,52 @@ function AppContent() {
           playlists={playlists}
           onAddTrackToPlaylist={handleAddTrackToPlaylist}
           onCreatePlaylist={handleCreatePlaylist}
+          onDeleteTrack={handleDeleteTrackFileConfirm}
           onClose={() => setActiveDetail(null)}
         />
+      )
+    }
+
+    if (activeTab === 'settings') {
+      return (
+        <div className="tab-view">
+          <h2 className="tab-title" style={{ marginBottom: '24px' }}>Cài đặt ứng dụng</h2>
+          <div className="settings-section-card" style={{ backgroundColor: '#181818', padding: '24px', borderRadius: '8px', border: '1px solid #282828', maxWidth: '800px' }}>
+            <h3 className="settings-section-title" style={{ margin: '0 0 12px 0', fontSize: '18px', fontWeight: 'bold' }}>Thư mục thư viện nhạc</h3>
+            <p className="settings-description" style={{ color: '#b3b3b3', fontSize: '14px', lineHeight: '1.6', margin: '0 0 20px 0' }}>
+              Chọn thư mục lưu trữ và quét nhạc của bạn. Toàn bộ file nhạc khi bạn thêm bằng nút "Add Music" sẽ được sao chép vào thư mục này để phát nhạc và đồng bộ thư viện.
+            </p>
+            
+            <div className="settings-dir-box" style={{ backgroundColor: '#121212', padding: '16px', borderRadius: '6px', border: '1px solid #282828', marginBottom: '24px' }}>
+              <div className="settings-dir-label" style={{ fontSize: '12px', fontWeight: 'bold', color: '#b3b3b3', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Đường dẫn hiện tại:</div>
+              <div className="settings-dir-value" style={{ fontSize: '14px', color: '#1db954', wordBreak: 'break-all', fontFamily: 'monospace' }}>{musicDir || 'Đang tải...'}</div>
+            </div>
+
+            <div className="settings-actions-row" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              <button 
+                className="btn-create-playlist" 
+                style={{ background: '#1db954', color: '#000', fontWeight: 'bold', padding: '10px 20px', borderRadius: '50px', border: 'none', cursor: 'pointer', fontSize: '14px' }}
+                onClick={handleChangeMusicDir}
+              >
+                Thay đổi thư mục
+              </button>
+              <button 
+                className="btn-create-playlist" 
+                style={{ background: '#282828', color: '#fff', border: '1px solid #7c7c7c', fontWeight: 'bold', padding: '10px 20px', borderRadius: '50px', cursor: 'pointer', fontSize: '14px' }}
+                onClick={() => window.api.openMusicFolder()}
+              >
+                Mở thư mục
+              </button>
+              <button 
+                className="btn-create-playlist" 
+                style={{ background: 'transparent', color: '#b3b3b3', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontSize: '14px', marginLeft: '12px' }}
+                onClick={handleResetMusicDir}
+              >
+                Đặt lại mặc định
+              </button>
+            </div>
+          </div>
+        </div>
       )
     }
 
@@ -589,6 +699,13 @@ function AppContent() {
                 title="Quét lại thư viện nhạc"
               >
                 <IoRefresh size={18} className={isScanning ? 'spinning' : ''} />
+              </button>
+              <button 
+                className="btn-rescan-library btn-open-folder" 
+                onClick={() => window.api.openMusicFolder()}
+                title="Mở thư mục nhạc trên máy tính"
+              >
+                <IoFolderOpen size={18} />
               </button>
             </div>
             {renderSortDropdown()}
@@ -747,6 +864,17 @@ function AppContent() {
                                   + Tạo playlist mới
                                 </button>
                               )}
+                              <div className="dropdown-divider"></div>
+                              <button 
+                                className="dropdown-item delete-highlight"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleDeleteTrackFileConfirm(track)
+                                  setActiveTrackForPlaylistMenu(null)
+                                }}
+                              >
+                                Xóa khỏi thư viện
+                              </button>
                             </div>
                           )}
                         </div>

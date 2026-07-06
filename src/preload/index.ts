@@ -16,7 +16,12 @@ const api: IPCBridge = {
   getPlaylistTracks: (playlistId) => ipcRenderer.invoke('get-playlist-tracks', playlistId),
   getLyrics: (trackId) => ipcRenderer.invoke('get-lyrics', trackId),
   addToRecentlyPlayed: (trackId) => ipcRenderer.invoke('add-to-recently-played', trackId),
-  getRecentlyPlayed: () => ipcRenderer.invoke('get-recently-played')
+  getRecentlyPlayed: () => ipcRenderer.invoke('get-recently-played'),
+  deleteTrackFile: (trackId) => ipcRenderer.invoke('delete-track-file', trackId),
+  openMusicFolder: () => ipcRenderer.invoke('open-music-folder'),
+  getMusicDirectory: () => ipcRenderer.invoke('get-music-directory'),
+  selectMusicDirectory: () => ipcRenderer.invoke('select-music-directory'),
+  resetMusicDirectory: () => ipcRenderer.invoke('reset-music-directory')
 }
 
 contextBridge.exposeInMainWorld('api', api)

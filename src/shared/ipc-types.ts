@@ -20,6 +20,11 @@ export interface IPCBridge {
   getLyrics: (trackId: number) => Promise<{ synced: boolean, lyrics: any[] | string }>;
   addToRecentlyPlayed: (trackId: number) => Promise<void>;
   getRecentlyPlayed: () => Promise<Track[]>;
+  deleteTrackFile: (trackId: number) => Promise<Track[]>;
+  openMusicFolder: () => Promise<boolean>;
+  getMusicDirectory: () => Promise<string>;
+  selectMusicDirectory: () => Promise<string | null>;
+  resetMusicDirectory: () => Promise<string>;
 }
 
 declare global {

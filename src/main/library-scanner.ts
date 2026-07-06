@@ -16,11 +16,29 @@ export function normalizePath(p: string): string {
 }
 
 export function getMusicDirectory(): string {
-  // If app is packaged, store next to executable. Otherwise, in project root.
+  try {
+    const db = getDB()
+    const setting = db.prepare("SELECT value FROM settings WHERE key = 'music_directory'").get() as { value: string } | undefined
+    if (setting && setting.value) {
+      const customPath = normalizePath(setting.value)
+      if (!fs.existsSync(customPath)) {
+        fs.mkdirSync(customPath, { recursive: true })
+      }
+      return customPath
+    }
+  } catch (err) {
+    console.error('[DB] Failed to read music_directory setting:', err)
+  }
+
+  // Fallback to default path
   const baseDir = app.isPackaged
     ? path.dirname(app.getPath('exe'))
     : app.getAppPath()
-  return normalizePath(path.join(baseDir, 'music'))
+  const defaultPath = normalizePath(path.join(baseDir, 'music'))
+  if (!fs.existsSync(defaultPath)) {
+    fs.mkdirSync(defaultPath, { recursive: true })
+  }
+  return defaultPath
 }
 
 function getAudioFilesRecursively(dir: string, fileList: string[] = []): string[] {

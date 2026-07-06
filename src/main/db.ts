@@ -66,6 +66,11 @@ export function initDB(): Database.Database {
     );
 
     CREATE INDEX IF NOT EXISTS idx_recently_played_time ON recently_played(played_at DESC);
+
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT
+    );
   `)
 
   // Add is_favorite column to tracks if it doesn't exist (for existing databases)

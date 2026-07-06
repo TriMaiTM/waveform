@@ -1978,3 +1978,12 @@ h1, h2, h3, .banner-title, .logo-text, .tab-title {
 .artist-circle img {
   border-radius: 50% !important;
 }
+
+/* Delete option styling */
+.delete-highlight {
+  color: #ff4a4a !important; /* Spotify-like red color for alert actions */
+}
+.delete-highlight:hover {
+  background-color: rgba(255, 74, 74, 0.15) !important;
+  color: #ffffff !important;
+}
