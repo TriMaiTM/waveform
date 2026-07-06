@@ -1,0 +1,57 @@
+{
+  "name": "waveform",
+  "version": "1.0.0",
+  "description": "Waveform - A Local Music Player",
+  "main": "out/main/index.js",
+  "author": "Antigravity",
+  "license": "ISC",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "postinstall": "npm run rebuild",
+    "rebuild": "electron-rebuild -f -w better-sqlite3",
+    "package": "npm run build && electron-builder",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.1.2",
+    "howler": "^2.2.4",
+    "music-metadata": "^10.2.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-icons": "^5.7.0"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^3.6.0",
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/howler": "^2.2.13",
+    "@types/node": "^20.14.9",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "electron": "^31.0.1",
+    "electron-builder": "^24.13.3",
+    "electron-vite": "^2.3.0",
+    "typescript": "^5.5.2",
+    "vite": "^5.3.1"
+  },
+  "build": {
+    "appId": "com.waveform.player",
+    "productName": "Waveform",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "out/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "asarUnpack": [
+      "**/node_modules/better-sqlite3/**"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "build/Waveform.ico" 
+    }
+  }
+}
