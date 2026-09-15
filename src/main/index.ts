@@ -1,11 +1,19 @@
-import { app, BrowserWindow, protocol, net } from 'electron'
+import { registerGdIpcHandlers } from './gd-ipc'
+import { registerTftIpcHandlers } from './tft-ipc'
+import { app, BrowserWindow, protocol, net, globalShortcut, Tray, Menu, nativeImage } from 'electron'
 import path from 'path'
 import { pathToFileURL } from 'url'
 import { initDB } from './db'
-import { registerIPCHandlers } from './ipc-handlers'
+import { registerIPCHandlers, exitMiniPlayerMode } from './ipc-handlers'
 import { getMusicDirectory } from './library-scanner'
 import fs from 'fs'
 import { Readable } from 'stream'
+
+// Suppress Chromium disk cache locking errors on Windows dev environments
+app.commandLine.appendSwitch('disable-gpu-cache')
+app.commandLine.appendSwitch('disable-gpu-shader-disk-cache')
+app.commandLine.appendSwitch('disable-http-cache')
+app.commandLine.appendSwitch('log-level', '3')
 
 // Helper function to map file extension to MIME type
 function getMimeType(filePath: string): string {
@@ -26,6 +34,8 @@ protocol.registerSchemesAsPrivileged([
 ])
 
 let mainWindow: BrowserWindow | null = null
+let isQuiting = false
+let tray: Tray | null = null
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -39,11 +49,33 @@ function createWindow(): void {
   })
 
   // Load the app depending on dev/prod server
-  if (process.env.VITE_DEV_SERVER_URL) {
-    mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL)
+  // Load the app depending on dev/prod server (electron-vite uses ELECTRON_RENDERER_URL)
+  const devServerUrl = process.env['ELECTRON_RENDERER_URL'] || process.env.VITE_DEV_SERVER_URL
+  if (devServerUrl) {
+    console.log('[Main] Loading dev server from URL:', devServerUrl)
+    mainWindow.loadURL(devServerUrl)
+    mainWindow.webContents.openDevTools()
   } else {
+    console.log('[Main] Loading production bundle from file')
     mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'))
   }
+
+  // Forward renderer console logs to terminal
+  mainWindow.webContents.on('console-message', (_event, level, message, line, sourceId) => {
+    console.log(`[Renderer L${level}] ${message} (${sourceId}:${line})`)
+  })
+
+  mainWindow.on('close', (event) => {
+    if (!isQuiting) {
+      event.preventDefault()
+      mainWindow?.hide()
+    }
+    return false
+  })
+
+  mainWindow.on('closed', () => {
+    mainWindow = null
+  })
 }
 
 app.whenReady().then(() => {
@@ -58,6 +90,11 @@ app.whenReady().then(() => {
 
   // Register IPC handlers
   registerIPCHandlers()
+  registerTftIpcHandlers()
+  registerGdIpcHandlers()
+
+  // Hide default menu bar (File, Edit, View, etc.) vĩnh viễn
+  Menu.setApplicationMenu(null)
 
   // Register custom media protocol to serve local assets with manual HTTP 206 Range Requests support
   protocol.handle('media', async (request) => {
@@ -134,6 +171,42 @@ app.whenReady().then(() => {
 
   createWindow()
 
+  // Create System Tray Icon
+  try {
+    let trayIcon
+    const iconPath = path.join(app.getAppPath(), 'build/Waveform.ico')
+    
+    if (fs.existsSync(iconPath)) {
+      trayIcon = nativeImage.createFromPath(iconPath)
+    } else {
+      console.warn('[Tray] Icon Waveform.ico not found, creating empty fallback tray:', iconPath)
+      trayIcon = nativeImage.createEmpty()
+    }
+
+    tray = new Tray(trayIcon)
+    const contextMenu = Menu.buildFromTemplate([
+      { label: 'Mở Waveform', click: () => { exitMiniPlayerMode() } },
+      { type: 'separator' },
+      { label: 'Phát / Tạm dừng', click: () => { mainWindow?.webContents.send('global-media-play-pause') } },
+      { label: 'Bài tiếp theo', click: () => { mainWindow?.webContents.send('global-media-next') } },
+      { label: 'Bài trước đó', click: () => { mainWindow?.webContents.send('global-media-prev') } },
+      { type: 'separator' },
+      { label: 'Thoát', click: () => {
+        isQuiting = true
+        app.quit()
+      } }
+    ])
+    tray.setToolTip('Waveform Music Player')
+    tray.setContextMenu(contextMenu)
+    tray.on('double-click', () => {
+      exitMiniPlayerMode()
+    })
+  } catch (err) {
+    console.error('Failed to create system tray:', err)
+  }
+
+
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
@@ -141,4 +214,8 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
+})
+
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll()
 })

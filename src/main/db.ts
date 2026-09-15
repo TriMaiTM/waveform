@@ -9,7 +9,8 @@ export function initDB(): Database.Database {
   if (db) return db
 
   const userDataPath = app.getPath('userData')
-  const dbPath = path.join(userDataPath, 'waveform.sqlite')
+  const dbName = app.isPackaged ? 'waveform.sqlite' : 'waveform-dev.sqlite'
+  const dbPath = path.join(userDataPath, dbName)
   
   // Ensure the directory exists (it should, but good practice)
   if (!fs.existsSync(userDataPath)) {
@@ -45,7 +46,9 @@ export function initDB(): Database.Database {
       album TEXT,
       duration_seconds REAL,
       cover_path TEXT,
-      is_favorite INTEGER DEFAULT 0
+      is_favorite INTEGER DEFAULT 0,
+      genre TEXT,
+      year INTEGER
     );
 
     CREATE TABLE IF NOT EXISTS playlists (
@@ -73,16 +76,29 @@ export function initDB(): Database.Database {
     );
   `)
 
-  // Add is_favorite column to tracks if it doesn't exist (for existing databases)
+  // Add is_favorite, genre, and year columns to tracks if they don't exist (for existing databases)
   try {
     const columns = db.prepare("PRAGMA table_info(tracks)").all() as Array<{ name: string }>
+    
     const hasFavorite = columns.some(col => col.name === 'is_favorite')
     if (!hasFavorite) {
       console.log('[DB] Adding is_favorite column to tracks table...')
       db.exec('ALTER TABLE tracks ADD COLUMN is_favorite INTEGER DEFAULT 0')
     }
+    
+    const hasGenre = columns.some(col => col.name === 'genre')
+    if (!hasGenre) {
+      console.log('[DB] Adding genre column to tracks table...')
+      db.exec('ALTER TABLE tracks ADD COLUMN genre TEXT')
+    }
+    
+    const hasYear = columns.some(col => col.name === 'year')
+    if (!hasYear) {
+      console.log('[DB] Adding year column to tracks table...')
+      db.exec('ALTER TABLE tracks ADD COLUMN year INTEGER')
+    }
   } catch (err) {
-    console.error('Error adding is_favorite column:', err)
+    console.error('Error adding columns (is_favorite/genre/year) to tracks table:', err)
   }
 
   // Add cover_path column to playlists if it doesn't exist

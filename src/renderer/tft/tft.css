@@ -1,0 +1,1404 @@
+/* TFT Tactics Module Styles - Spotify Dark Theme & MetaTFT Design */
+
+.tft-hub-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 20px 28px;
+  overflow-y: auto;
+  color: var(--text-base);
+  background-color: var(--bg-base);
+  box-sizing: border-box;
+}
+
+/* Header & Top Bar */
+.tft-header {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.tft-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tft-title-area h1 {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+}
+
+.tft-subtitle {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin: 0;
+}
+
+/* Control Toolbar (Matching MetaTFT top bar) */
+.tft-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  background-color: #181818;
+  border: 1px solid #282828;
+  border-radius: 8px;
+  padding: 10px 16px;
+}
+
+.tft-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tft-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #242424;
+  border: 1px solid #333;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+/* Unified Select Dropdowns */
+.tft-select-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.tft-select {
+  appearance: none;
+  background-color: #242424;
+  border: 1px solid #383838;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 28px 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.tft-select:focus, .tft-select:hover {
+  border-color: var(--color-green);
+  background-color: #2a2a2a;
+}
+
+.tft-select-arrow {
+  position: absolute;
+  right: 8px;
+  pointer-events: none;
+  color: #888;
+  font-size: 11px;
+}
+
+/* Custom Rank Dropdown Container */
+.tft-rank-dropdown-container {
+  position: relative;
+  display: inline-block;
+}
+
+.tft-rank-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #242424;
+  border: 1px solid #383838;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tft-rank-btn:hover {
+  border-color: var(--color-green);
+  background-color: #2a2a2a;
+}
+
+.tft-rank-wing-icon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+/* Full Rank Popover with Multi-select Checkboxes */
+.tft-rank-full-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  background-color: #242424;
+  border: 1px solid #383838;
+  border-radius: 8px;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.85);
+  z-index: 100;
+  width: 260px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.tft-rank-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.tft-rank-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.tft-rank-item-row:hover {
+  background-color: #2e2e2e;
+}
+
+.tft-rank-item-row.is-checked {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.tft-rank-item-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tft-rank-item-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+}
+
+.tft-rank-item-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.tft-rank-item-count {
+  font-size: 12px;
+  color: #888;
+  font-variant-numeric: tabular-nums;
+}
+
+.tft-rank-checkbox {
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid #555;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #1e1e1e;
+  transition: all 0.15s;
+}
+
+.tft-rank-checkbox.checked {
+  border-color: #ef4444;
+  background-color: rgba(239, 68, 68, 0.15);
+}
+
+.tft-rank-apply-btn {
+  background-color: #333333;
+  color: #e0e0e0;
+  border: none;
+  border-top: 1px solid #3d3d3d;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.tft-rank-apply-btn:hover {
+  background-color: #444444;
+  color: #ffffff;
+}
+
+.tft-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tft-search-box {
+  display: flex;
+  align-items: center;
+  background-color: #242424;
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 6px 12px;
+  gap: 8px;
+  width: 220px;
+  transition: border-color 0.2s;
+}
+
+.tft-search-box:focus-within {
+  border-color: var(--color-green);
+}
+
+.tft-search-box input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-size: 12px;
+  width: 100%;
+}
+
+.tft-search-clear {
+  background: transparent;
+  border: none;
+  color: #888;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.tft-search-clear:hover {
+  color: #fff;
+}
+
+.tft-btn-refresh {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #242424;
+  color: var(--text-base);
+  border: 1px solid #383838;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tft-btn-refresh:hover {
+  background-color: #2a2a2a;
+  border-color: #484848;
+}
+
+/* Tier Group Section */
+.tft-comps-tier-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.tft-tier-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tft-tier-group-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tft-tier-group-badge {
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  text-transform: uppercase;
+}
+
+.tft-tier-group-badge.tier-s { background: #dc2626; }
+.tft-tier-group-badge.tier-a { background: #7c3aed; }
+.tft-tier-group-badge.tier-b { background: #2563eb; }
+.tft-tier-group-badge.tier-c { background: #059669; }
+.tft-tier-group-badge.tier-d { background: #4b5563; }
+
+.tft-tier-group-count {
+  font-size: 13px;
+  color: #888;
+  font-weight: 500;
+}
+
+.tft-comps-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Comp Card */
+.tft-comp-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #181818;
+  border: 1px solid #262626;
+  border-radius: 8px;
+  padding: 12px 18px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: visible;
+  gap: 16px;
+}
+
+.tft-comp-card:hover {
+  background-color: #1e1e1e;
+  border-color: #383838;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+
+/* .tft-comp-card.border-tier-s (string removed) */
+/* .tft-comp-card.border-tier-a (string removed) */
+/* .tft-comp-card.border-tier-b (string removed) */
+/* .tft-comp-card.border-tier-c (string removed) */
+/* .tft-comp-card.border-tier-d (string removed) */
+/* .tft-comp-card.border-tier-q (string removed) */
+
+/* Left Section: Tier + Name + Levelling */
+/* Carry Champion Artwork Background at Head of Comp Card (Widescreen HD View - Shows Face, Torso, Weapons & Costume) */
+.tft-card-carry-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 360px;
+  background-size: cover;
+  background-position: 50% 25%;
+  background-repeat: no-repeat;
+  border-radius: 7px 0 0 7px;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.68;
+  mask-image: linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0.95) 54%, rgba(0,0,0,0.2) 85%, rgba(0,0,0,0) 100%);
+  -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0.95) 54%, rgba(0,0,0,0.2) 85%, rgba(0,0,0,0) 100%);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.tft-card-carry-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 380px;
+  background: linear-gradient(90deg, rgba(16, 18, 30, 0.42) 0%, rgba(16, 18, 30, 0.12) 50%, rgba(24, 24, 24, 0.85) 85%, #181818 100%);
+  border-radius: 7px 0 0 7px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.tft-comp-card:hover .tft-card-carry-bg {
+  opacity: 0.78;
+  transform: scale(1.03);
+}
+
+.tft-card-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 250px;
+  max-width: 280px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+}
+
+/* Big Tier Letter (S / A / B / C / D) - Extra Large & Prominent */
+.tft-tier-big-letter {
+  font-size: 52px;
+  font-weight: 900;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  flex-shrink: 0;
+  user-select: none;
+  letter-spacing: -2px;
+  font-family: inherit;
+  transition: transform 0.2s ease;
+  margin-right: 2px;
+}
+
+.tft-comp-card:hover .tft-tier-big-letter {
+  transform: scale(1.06);
+}
+
+.tft-tier-big-letter.tier-s {
+  color: #ef4444;
+  text-shadow: 0 0 20px rgba(239, 68, 68, 0.55);
+}
+.tft-tier-big-letter.tier-a {
+  color: #a855f7;
+  text-shadow: 0 0 20px rgba(168, 85, 247, 0.55);
+}
+.tft-tier-big-letter.tier-b {
+  color: #38bdf8;
+  text-shadow: 0 0 20px rgba(56, 189, 248, 0.55);
+}
+.tft-tier-big-letter.tier-c {
+  color: #22c55e;
+  text-shadow: 0 0 20px rgba(34, 197, 94, 0.55);
+}
+.tft-tier-big-letter.tier-d {
+  color: #9ca3af;
+}
+
+
+
+.tft-tier-square {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 14px;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.tft-tier-square.tier-s { background: #dc2626; }
+.tft-tier-square.tier-a { background: #7c3aed; }
+.tft-tier-square.tier-b { background: #2563eb; }
+.tft-tier-square.tier-c { background: #059669; }
+.tft-tier-square.tier-d { background: #4b5563; }
+.tft-tier-square.tier-q { background: #374151; }
+
+.tft-comp-info-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.tft-comp-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 5px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+}
+
+.tft-comp-tags {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.tft-tag-pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background-color: #222;
+  border: 1px solid #333;
+  color: #bbb;
+}
+
+.tft-tag-pill.diff-easy { color: #10b981; border-color: rgba(16, 185, 129, 0.3); }
+.tft-tag-pill.diff-medium { color: #f59e0b; border-color: rgba(245, 158, 11, 0.3); }
+.tft-tag-pill.diff-hard { color: #ef4444; border-color: rgba(239, 68, 68, 0.3); }
+
+/* Middle Section: Traits on top, Champions below */
+.tft-card-center {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+/* Traits Row */
+.tft-traits-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* Trait Badge & Floating Tooltip */
+.tft-trait-badge-container {
+  position: relative;
+  display: inline-block;
+}
+
+.tft-trait-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background-color: #1a1a1a;
+  border-radius: 4px;
+  padding: 2px 5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.tft-trait-badge-icon {
+  width: 15px;
+  height: 15px;
+  object-fit: contain;
+}
+
+.tft-trait-badge-count {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Tier Styles for Trait Badge */
+/* Prismatic (style 5) */
+.style-prismatic .tft-trait-badge {
+  border: 1px solid #e0e7ff;
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%);
+  box-shadow: 0 0 6px rgba(165, 180, 252, 0.4);
+}
+.style-prismatic .tft-trait-badge-count {
+  color: #c7d2fe;
+}
+
+/* Gold (style 4) */
+.style-gold .tft-trait-badge {
+  border: 1px solid #f59e0b;
+  background-color: #261e0e;
+  box-shadow: 0 0 4px rgba(245, 158, 11, 0.3);
+}
+.style-gold .tft-trait-badge-count {
+  color: #fbbf24;
+}
+
+/* Silver (style 3) */
+.style-silver .tft-trait-badge {
+  border: 1px solid #94a3b8;
+  background-color: #1c2024;
+}
+.style-silver .tft-trait-badge-count {
+  color: #cbd5e1;
+}
+
+/* Bronze (style 1) */
+.style-bronze .tft-trait-badge {
+  border: 1px solid #a87146;
+  background-color: #211914;
+}
+.style-bronze .tft-trait-badge-count {
+  color: #d97706;
+}
+
+/* Trait Hover Tooltip (Matching MetaTFT Trait Modal / Screenshot 2) */
+.tft-trait-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #1a1a1a;
+  border: 1px solid #383838;
+  border-radius: 8px;
+  padding: 12px 14px;
+  width: 280px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.85);
+  z-index: 1000;
+  pointer-events: auto;
+  color: #e5e7eb;
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.tft-trait-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 6px;
+  border-style: solid;
+  border-color: #1a1a1a transparent transparent transparent;
+}
+
+.tft-trait-tooltip-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tft-trait-tooltip-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.tft-trait-tooltip-innate {
+  font-size: 12px;
+  line-height: 1.4;
+  color: #d1d5db;
+  background-color: rgba(255, 255, 255, 0.04);
+  padding: 6px 8px;
+  border-radius: 4px;
+  border-left: 2px solid #1ed760;
+}
+
+.tft-trait-innate-label {
+  font-weight: 700;
+  color: #fff;
+}
+
+.tft-trait-tooltip-desc {
+  font-size: 12px;
+  line-height: 1.4;
+  color: #9ca3af;
+  white-space: pre-line;
+}
+
+.tft-trait-tooltip-effects {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.tft-trait-tooltip-effect-row {
+  font-size: 12px;
+  line-height: 1.4;
+  color: #888;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.tft-trait-tooltip-effect-row.active-breakpoint {
+  color: #fbbf24;
+  font-weight: 700;
+  background-color: rgba(251, 191, 36, 0.12);
+  border-left: 2px solid #fbbf24;
+  padding-left: 6px;
+}
+
+/* Tooltip Units Section */
+.tft-trait-tooltip-units-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px solid #2e2e2e;
+}
+
+.tft-trait-tooltip-units-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #9ca3af;
+}
+
+.tft-trait-tooltip-units-list {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.tft-trait-unit-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 3px;
+  overflow: hidden;
+  background-color: #121212;
+}
+
+.tft-trait-unit-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Champions Row */
+.tft-units-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-bottom: 4px;
+}
+
+.tft-unit-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  width: 44px;
+}
+
+.tft-unit-stars {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #fbbf24;
+  font-size: 10px;
+  letter-spacing: -2px;
+  text-shadow: 0 1px 3px #000;
+  font-weight: 900;
+  z-index: 3;
+}
+
+.tft-unit-img-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
+  position: relative;
+  background-color: #121212;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+}
+
+.tft-unit-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+/* Cost borders */
+.cost-1 { border: 2px solid #808a96 !important; }
+.cost-2 { border: 2px solid #10b981 !important; }
+.cost-3 { border: 2px solid #3b82f6 !important; }
+.cost-4 { border: 2px solid #a855f7 !important; }
+.cost-5 { border: 2px solid #f59e0b !important; }
+
+/* Items Attached to Champion Avatar */
+.tft-avatar-items {
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 2px;
+  z-index: 4;
+}
+
+.tft-avatar-item-icon {
+  width: 13px;
+  height: 13px;
+  border-radius: 2px;
+  background-color: #000;
+  border: 1px solid #383838;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.7);
+}
+
+.tft-avatar-item-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tft-unit-name {
+  font-size: 10px;
+  color: #a0a0a0;
+  margin-top: 8px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 48px;
+}
+
+/* Right Section: 4 Stat Columns */
+.tft-card-stats {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-width: 290px;
+  justify-content: flex-end;
+}
+
+.tft-stat-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 54px;
+}
+
+.tft-stat-number {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.tft-stat-number.avg-good {
+  color: #10b981;
+}
+
+.tft-stat-label {
+  font-size: 11px;
+  color: #777;
+  margin-top: 2px;
+}
+
+.tft-card-arrow {
+  font-size: 18px;
+  color: #555;
+  margin-left: 6px;
+  transition: transform 0.2s, color 0.2s;
+}
+
+.tft-comp-card:hover .tft-card-arrow {
+  color: #fff;
+  transform: translateX(3px);
+}
+
+/* Empty, Error, Loading States */
+.tft-loading-state, .tft-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #888;
+  gap: 16px;
+}
+
+.tft-spin {
+  animation: spin 1s linear infinite;
+  color: #1ed760;
+}
+
+.tft-btn-reset {
+  background-color: #242424;
+  color: #fff;
+  border: 1px solid #383838;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.tft-btn-reset:hover {
+  border-color: #1ed760;
+  background-color: #2a2a2a;
+}
+
+.tft-error-banner {
+  background-color: rgba(239, 68, 68, 0.15);
+  border: 1px solid #ef4444;
+  border-radius: 6px;
+  padding: 10px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  color: #fca5a5;
+  font-size: 13px;
+}
+
+.tft-error-banner button {
+  background-color: #ef4444;
+  color: #fff;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* Keyframes */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================================
+   TFT COMP DETAIL MODAL & HEX BOARD
+   ========================================================================== */
+
+.tft-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: tftFadeIn 0.2s ease-out;
+}
+
+@keyframes tftFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.tft-modal-content {
+  background: #181818;
+  border: 1px solid #333333;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 940px;
+  height: 85vh; /* Cố định chiều cao, tránh co giật khi đổi tab */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.9);
+  animation: tftSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes tftSlideUp {
+  from { transform: translateY(20px) scale(0.98); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.tft-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid #282828;
+  background: #1f1f1f;
+  flex-shrink: 0; /* Cố định không co lại */
+}
+
+.tft-modal-header-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tft-modal-comp-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.tft-btn-close {
+  background: transparent;
+  border: none;
+  color: #a7a7a7;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.tft-btn-close:hover {
+  background: #333;
+  color: #fff;
+}
+
+.tft-modal-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 10px 24px;
+  background: #141414;
+  border-bottom: 1px solid #242424;
+  flex-shrink: 0; /* Cố định không co lại */
+  overflow-x: auto;
+}
+
+.tft-modal-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #a7a7a7;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.tft-modal-tab-btn:hover {
+  background: #222;
+  color: #fff;
+}
+
+.tft-modal-tab-btn.active {
+  background: #282828;
+  color: #1ed760;
+  box-shadow: inset 0 -2px 0 #1ed760;
+}
+
+.tft-modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0; /* Cho phép scroll độc lập không bẹp header */
+  color: #e0e0e0;
+}
+
+.tft-modal-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.tft-modal-body::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
+}
+
+.tft-sub-card {
+  background: #202020;
+  border: 1px solid #2e2e2e;
+  border-radius: 8px;
+  padding: 14px 18px;
+  transition: border-color 0.15s;
+}
+
+.tft-sub-card:hover {
+  border-color: #444;
+}
+
+.tft-sub-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Modal Unit Slots in Options & Early */
+.tft-modal-units-list {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tft-modal-unit-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 52px;
+}
+
+.tft-modal-unit-slot .tft-unit-img-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
+  position: relative;
+  background: #1e1e1e;
+  overflow: hidden;
+}
+
+.tft-modal-unit-slot .tft-unit-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: #888;
+  font-weight: 700;
+}
+
+.tft-modal-unit-name {
+  font-size: 11px;
+  color: #ccc;
+  margin-top: 5px;
+  text-align: center;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+.tft-btn-expand-more {
+  margin-top: 10px;
+  padding: 9px 16px;
+  background: #202020;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #b3b3b3;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s;
+  width: 100%;
+}
+
+.tft-btn-expand-more:hover {
+  background: #282828;
+  color: #fff;
+  border-color: #444;
+}
+
+/* ==========================================================================
+   AUTHENTIC TFT HEXAGON BOARD POSITIONING (28 HEX CELLS)
+   ========================================================================== */
+
+.tft-hex-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 16px;
+  background: #111419;
+  border: 1px solid #232936;
+  border-radius: 12px;
+  overflow-x: auto;
+}
+
+.tft-hex-header-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: #8fa0b5;
+  text-align: center;
+}
+
+.tft-hex-svg-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  overflow-x: auto;
+  padding: 8px 0;
+}
+
+.tft-hex-svg-board {
+  max-width: 100%;
+  height: auto;
+  overflow: visible;
+  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.6));
+}
+
+.tft-hex-node {
+  transition: transform 0.15s ease;
+  transform-origin: center;
+}
+
+.tft-hex-node.occupied {
+  cursor: pointer;
+}
+
+.tft-hex-polygon {
+  transition: stroke 0.2s ease, stroke-width 0.2s ease;
+}
+
+.tft-hex-node.occupied:hover .tft-hex-polygon {
+  stroke-width: 3.5px;
+}
+
+.tft-hex-svg-label {
+  font-family: inherit;
+  letter-spacing: -0.2px;
+  paint-order: stroke;
+  stroke: rgba(0, 0, 0, 0.9);
+  stroke-width: 3.5px;
+  stroke-linejoin: round;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ==========================================================================
+   AUGMENT CARDS (LÕI NÂNG CẤP)
+   ========================================================================== */
+
+.tft-augment-card {
+  background: #1e1e1e;
+  border: 1px solid #2c2c2c;
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.tft-augment-card:hover {
+  border-color: #444;
+  transform: translateY(-2px);
+}
+
+.tft-augment-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tft-augment-icon-wrap {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  background: #141414;
+  border: 1px solid #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.tft-augment-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.tft-augment-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.tft-augment-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-weight: 700;
+  color: #fff;
+  font-size: 13px;
+}
+
+.tft-augment-tier-badge {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.tft-augment-tier-badge.tier-s {
+  background: rgba(234, 179, 8, 0.2);
+  color: #facc15;
+  border: 1px solid rgba(234, 179, 8, 0.4);
+}
+
+.tft-augment-tier-badge.tier-a {
+  background: rgba(192, 38, 211, 0.2);
+  color: #e879f9;
+  border: 1px solid rgba(192, 38, 211, 0.4);
+}
+
+.tft-augment-desc {
+  font-size: 12px;
+  color: #a7a7a7;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+
+/* ==========================================================================
+   TFT CARD STACKING CONTEXT & TOOLTIP ON-TOP FIX
+   ========================================================================== */
+
+.tft-comp-card {
+  position: relative !important;
+  z-index: 1;
+}
+
+.tft-comp-card:hover {
+  z-index: 50 !important;
+}
+
+/* When hovering over any trait in a comp card, boost that card to highest stacking order */
+.tft-comp-card:has(.tft-trait-badge-container:hover) {
+  z-index: 99999 !important;
+}
+
+.tft-card-left {
+  position: relative;
+  z-index: 1;
+}
+
+.tft-card-center {
+  position: relative;
+  z-index: 2;
+}
+
+.tft-card-stats {
+  position: relative;
+  z-index: 1;
+}
+
+.tft-traits-row {
+  position: relative;
+  z-index: 35 !important;
+}
+
+.tft-traits-row:hover {
+  z-index: 99999 !important;
+}
+
+.tft-trait-badge-container {
+  position: relative;
+  cursor: pointer;
+}
+
+.tft-trait-badge-container:hover {
+  z-index: 999999 !important;
+}
+
+.tft-units-row {
+  position: relative;
+  z-index: 5 !important; /* Always below tft-traits-row (35) so stars & items never overlap tooltip */
+}
+
+.tft-trait-tooltip {
+  z-index: 9999999 !important;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.96), 0 0 0 1px rgba(255, 255, 255, 0.12) !important;
+}

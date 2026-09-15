@@ -30,7 +30,7 @@ export function getMusicDirectory(): string {
     console.error('[DB] Failed to read music_directory setting:', err)
   }
 
-  // Fallback to default path
+  // Fallback to default path in application directory
   const baseDir = app.isPackaged
     ? path.dirname(app.getPath('exe'))
     : app.getAppPath()
@@ -70,6 +70,13 @@ export async function scanLibrary(folderPath: string = getMusicDirectory()): Pro
   const audioFiles = getAudioFilesRecursively(normalizedFolderPath)
   const db = getDB()
   
+  // Load existing tracks to skip re-parsing unchanged files (O(1) lookup map)
+  const existingTracks = db.prepare('SELECT file_path, genre, year FROM tracks').all() as Array<{ file_path: string, genre: string | null, year: number | null }>
+  const trackMap = new Map<string, { genre: string | null, year: number | null }>()
+  for (const t of existingTracks) {
+    trackMap.set(t.file_path, { genre: t.genre, year: t.year })
+  }
+
   // Dynamically import music-metadata
   const { parseFile } = await import('music-metadata')
   
@@ -87,9 +94,16 @@ export async function scanLibrary(folderPath: string = getMusicDirectory()): Pro
     album: string | null;
     durationSeconds: number | null;
     coverPath: string | null;
+    genre: string | null;
+    year: number | null;
   }> = []
 
   for (const filePath of audioFiles) {
+    // If the track already exists in database, skip parsing it to prevent overwriting user-edited tags
+    if (trackMap.has(filePath)) {
+      continue
+    }
+
     try {
       const stats = fs.statSync(filePath)
       
@@ -103,7 +117,9 @@ export async function scanLibrary(folderPath: string = getMusicDirectory()): Pro
           artist: 'Unknown Artist',
           album: 'Unknown Album',
           durationSeconds: null,
-          coverPath: null
+          coverPath: null,
+          genre: 'Unknown Genre',
+          year: null
         })
         continue
       }
@@ -113,6 +129,8 @@ export async function scanLibrary(folderPath: string = getMusicDirectory()): Pro
       const artist = metadata.common.artist || 'Unknown Artist'
       const album = metadata.common.album || 'Unknown Album'
       const durationSeconds = metadata.format.duration || null
+      const genre = metadata.common.genre?.[0] || 'Unknown Genre'
+      const year = metadata.common.year || (metadata.common.date ? parseInt(metadata.common.date.substring(0, 4), 10) : null)
       
       let coverPath: string | null = null
       const picture = metadata.common.picture?.[0]
@@ -134,7 +152,9 @@ export async function scanLibrary(folderPath: string = getMusicDirectory()): Pro
         artist,
         album,
         durationSeconds,
-        coverPath
+        coverPath,
+        genre,
+        year
       })
     } catch (err) {
       console.warn(`[Scanner] Failed to parse metadata for ${path.basename(filePath)}:`, (err as Error).message)
@@ -145,7 +165,9 @@ export async function scanLibrary(folderPath: string = getMusicDirectory()): Pro
         artist: 'Unknown Artist',
         album: 'Unknown Album',
         durationSeconds: null,
-        coverPath: null
+        coverPath: null,
+        genre: 'Unknown Genre',
+        year: null
       })
     }
   }
@@ -153,12 +175,12 @@ export async function scanLibrary(folderPath: string = getMusicDirectory()): Pro
   // Statements for DB
   const selectStmt = db.prepare('SELECT id FROM tracks WHERE file_path = ?')
   const insertStmt = db.prepare(`
-    INSERT INTO tracks (file_path, title, artist, album, duration_seconds, cover_path)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO tracks (file_path, title, artist, album, duration_seconds, cover_path, genre, year)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `)
   const updateStmt = db.prepare(`
     UPDATE tracks 
-    SET title = ?, artist = ?, album = ?, duration_seconds = ?, cover_path = ?
+    SET title = ?, artist = ?, album = ?, duration_seconds = ?, cover_path = ?, genre = ?, year = ?
     WHERE id = ?
   `)
 
@@ -173,6 +195,8 @@ export async function scanLibrary(folderPath: string = getMusicDirectory()): Pro
           data.album,
           data.durationSeconds,
           data.coverPath,
+          data.genre,
+          data.year,
           existing.id
         )
       } else {
@@ -182,7 +206,9 @@ export async function scanLibrary(folderPath: string = getMusicDirectory()): Pro
           data.artist,
           data.album,
           data.durationSeconds,
-          data.coverPath
+          data.coverPath,
+          data.genre,
+          data.year
         )
       }
     }
@@ -218,7 +244,9 @@ export async function scanLibrary(folderPath: string = getMusicDirectory()): Pro
     album: row.album,
     durationSeconds: row.duration_seconds,
     coverPath: row.cover_path,
-    isFavorite: row.is_favorite || 0
+    isFavorite: row.is_favorite || 0,
+    genre: row.genre || '',
+    year: row.year || null
   }))
 }
 
@@ -286,6 +314,50 @@ export async function getLyricsForTrack(trackId: number): Promise<{ synced: bool
     }
   } catch (err) {
     console.warn(`[Lyrics] Failed to extract metadata lyrics for ${parsedPath.name}:`, err)
+  }
+
+  // Fallback to fetch from online database (LRCLIB API)
+  try {
+    const trackInfo = db.prepare('SELECT title, artist, duration_seconds FROM tracks WHERE id = ?').get(trackId) as { title: string, artist: string, duration_seconds: number } | undefined
+    if (trackInfo && trackInfo.title && trackInfo.artist) {
+      const queryParams = new URLSearchParams({
+        artist_name: trackInfo.artist,
+        track_name: trackInfo.title,
+        duration: Math.round(trackInfo.duration_seconds || 0).toString()
+      })
+      const url = `https://lrclib.net/api/get?${queryParams.toString()}`
+      console.log(`[Lyrics] Searching online lyrics on LRCLIB for ${parsedPath.name}...`)
+      
+      const response = await fetch(url, {
+        headers: { 'User-Agent': 'Waveform Music Player (https://github.com/Antigravity/waveform)' }
+      })
+      
+      if (response.ok) {
+        const data = await response.json() as any
+        
+        if (data.syncedLyrics && data.syncedLyrics.trim()) {
+          const content = data.syncedLyrics.trim()
+          // Caching LRC file next to media file
+          try {
+            fs.writeFileSync(lrcPath, content, 'utf-8')
+            console.log(`[Lyrics] Cached synced lyrics locally at: ${lrcPath}`)
+          } catch (writeErr) {
+            console.warn('[Lyrics] Failed to write LRC cache file:', writeErr)
+          }
+          
+          const syncedLyrics = parseLrc(content)
+          if (syncedLyrics.length > 0) {
+            return { synced: true, lyrics: syncedLyrics }
+          }
+        }
+        
+        if (data.plainLyrics && data.plainLyrics.trim()) {
+          return { synced: false, lyrics: data.plainLyrics.trim() }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn(`[Lyrics] Failed to fetch online lyrics from LRCLIB:`, err)
   }
 
   return { synced: false, lyrics: 'Chưa có lời bài hát cho bài này.' }

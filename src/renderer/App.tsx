@@ -1,12 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Track, Playlist } from '../shared/types'
-import { PlayerProvider } from './player/player-context'
-import { usePlayer } from './player/use-player'
-import NowPlayingBar from './components/NowPlayingBar'
-import Sidebar from './components/Sidebar'
-import Visualizer from './components/Visualizer'
-import EqualizerTab from './components/EqualizerTab'
-import ArtistAlbumDetail from './components/ArtistAlbumDetail'
+import { PlayerProvider } from './spotify/player/player-context'
+import { usePlayer } from './spotify/player/use-player'
+import NowPlayingBar from './spotify/NowPlayingBar'
+import Sidebar from './spotify/Sidebar'
+import Visualizer from './spotify/Visualizer'
+import EqualizerTab from './spotify/EqualizerTab'
+import AnalyticsTab from './spotify/AnalyticsTab'
+import ArtistAlbumDetail from './spotify/ArtistAlbumDetail'
+import DownloadTab from './spotify/DownloadTab'
+import TftHubView from './tft/TftHubView'
+import TftSidebar from './tft/TftSidebar'
+import DemonSidebar from './demonlist/DemonSidebar'
+import DemonlistView from './demonlist/DemonlistView'
+import DemonChangelogView from './demonlist/DemonChangelogView'
+import HubSidebar from './hub/HubSidebar'
+import HubView from './hub/HubView'
 import { 
   IoFlash, 
   IoMusicalNote, 
@@ -24,7 +33,13 @@ import {
   IoSearchOutline,
   IoPersonOutline,
   IoListOutline,
-  IoRefresh
+  IoRefresh,
+  IoPlaySkipBack,
+  IoPlaySkipForward,
+  IoPause,
+  IoOptionsOutline,
+  IoCreateOutline,
+  IoArrowBackOutline
 } from 'react-icons/io5'
 
 const getDominantColor = (imgUrl: string): Promise<string> => {
@@ -56,6 +71,9 @@ const getDominantColor = (imgUrl: string): Promise<string> => {
 }
 
 function AppContent() {
+  const [activeApp, setActiveApp] = useState<'hub' | 'music' | 'tft' | 'gd'>('hub')
+  const [gdTab, setGdTab] = useState<'demonlist' | 'changelog'>('demonlist')
+  const [tftTab, setTftTab] = useState<string>('comp')
   const [tracks, setTracks] = useState<Track[]>([])
   const [playlists, setPlaylists] = useState<Playlist[]>([])
   const [activeTab, setActiveTab] = useState<string>('library')
@@ -118,7 +136,12 @@ function AppContent() {
     duration,
     currentTime,
     seek,
-    volume
+    volume,
+    skipNext,
+    skipPrevious,
+    crossfadeTime,
+    setCrossfadeTime,
+    updateTrackMetadataInPlayer
   } = usePlayer()
 
   const [dominantColor, setDominantColor] = useState<string>('#282828')
@@ -172,10 +195,169 @@ function AppContent() {
     }
   }, [currentLyricIndex])
 
+  useEffect(() => {
+    const unregisterPlayPause = window.api.onGlobalShortcut('global-media-play-pause', () => {
+      if (isPlaying) {
+        pause()
+      } else {
+        resume()
+      }
+    })
+
+    const unregisterNext = window.api.onGlobalShortcut('global-media-next', () => {
+      skipNext()
+    })
+
+    const unregisterPrev = window.api.onGlobalShortcut('global-media-prev', () => {
+      skipPrevious()
+    })
+
+    return () => {
+      unregisterPlayPause()
+      unregisterNext()
+      unregisterPrev()
+    }
+  }, [isPlaying, pause, resume, skipNext, skipPrevious])
+
   // Recently Played state
   const [recentlyTracks, setRecentlyTracks] = useState<Track[]>([])
   const recordedTracksRef = useRef<Set<number>>(new Set())
   const [musicDir, setMusicDir] = useState<string>('')
+  const [isMiniPlayer, setIsMiniPlayer] = useState<boolean>(false)
+
+  // Phase 5 States: Tag Editor
+  const [editingTrack, setEditingTrack] = useState<Track | null>(null)
+  const [isTagPanelOpen, setIsTagPanelOpen] = useState(false)
+  const [tagTitle, setTagTitle] = useState('')
+  const [tagArtist, setTagArtist] = useState('')
+  const [tagAlbum, setTagAlbum] = useState('')
+  const [tagGenre, setTagGenre] = useState('')
+  const [tagYear, setTagYear] = useState<string>('')
+  const [tagCover, setTagCover] = useState<string | null>(null)
+  const [isSavingTags, setIsSavingTags] = useState(false)
+
+  const handleOpenTagEditor = (track: Track) => {
+    setEditingTrack(track)
+    setTagTitle(track.title || '')
+    setTagArtist(track.artist || '')
+    setTagAlbum(track.album || '')
+    setTagGenre(track.genre || '')
+    setTagYear(track.year ? track.year.toString() : '')
+    setTagCover(track.coverPath || null)
+    setIsTagPanelOpen(true)
+  }
+
+  const handleCloseTagPanel = () => {
+    setIsTagPanelOpen(false)
+    setTimeout(() => {
+      setEditingTrack(null)
+    }, 350)
+  }
+
+  const handleSelectCover = async () => {
+    try {
+      const newPath = await window.api.selectCoverImage()
+      if (newPath) {
+        setTagCover(newPath)
+      }
+    } catch (err) {
+      console.error('Failed to select cover image:', err)
+    }
+  }
+
+  const handleSaveTags = async () => {
+    if (!editingTrack) return
+    setIsSavingTags(true)
+    try {
+      const yearNum = tagYear.trim() ? parseInt(tagYear, 10) : null
+      const success = await window.api.updateTrackMetadata(editingTrack.id, {
+        title: tagTitle,
+        artist: tagArtist,
+        album: tagAlbum,
+        genre: tagGenre,
+        year: yearNum,
+        coverPath: tagCover
+      })
+      if (success) {
+        setStatusMessage('Đã cập nhật thông tin bài hát!')
+        setTimeout(() => setStatusMessage(''), 3000)
+        
+        // Synchronize state immediately in Player Context
+        updateTrackMetadataInPlayer(editingTrack.id, {
+          title: tagTitle,
+          artist: tagArtist,
+          album: tagAlbum,
+          genre: tagGenre,
+          year: yearNum,
+          coverPath: tagCover
+        })
+        
+        // Refresh tracks lists
+        const updatedTracks = await window.api.getLibraryTracks()
+        setTracks(updatedTracks)
+        
+        if (activeTab.startsWith('playlist-')) {
+          const playlistId = parseInt(activeTab.split('-')[1])
+          const pTracks = await window.api.getPlaylistTracks(playlistId)
+          setPlaylistTracks(pTracks)
+        }
+        
+        handleCloseTagPanel()
+      } else {
+        alert('Không thể lưu thông tin!')
+      }
+    } catch (err) {
+      console.error('Failed to save tags:', err)
+    } finally {
+      setIsSavingTags(false)
+    }
+  }
+  const [shortcuts, setShortcuts] = useState<{ playPause: string, next: string, prev: string }>({
+    playPause: 'MediaPlayPause',
+    next: 'MediaNextTrack',
+    prev: 'MediaPreviousTrack'
+  })
+  const [miniPlayerType, setMiniPlayerType] = useState<string>('standard')
+  const params = new URLSearchParams(window.location.search)
+  const isWidgetView = params.get('view') === 'widget'
+
+  const handleUpdateShortcut = async (key: string, value: string) => {
+    try {
+      const success = await window.api.updateGlobalShortcut(key, value)
+      if (success) {
+        setShortcuts(prev => ({
+          ...prev,
+          playPause: key === 'shortcut_play_pause' ? value : prev.playPause,
+          next: key === 'shortcut_next' ? value : prev.next,
+          prev: key === 'shortcut_prev' ? value : prev.prev
+        }))
+        setStatusMessage('Đã cập nhật phím tắt mới!')
+        setTimeout(() => setStatusMessage(''), 3000)
+      } else {
+        setStatusMessage('Không thể đăng ký phím tắt này (có thể bị trùng lặp).')
+        setTimeout(() => setStatusMessage(''), 3000)
+      }
+    } catch (err) {
+      console.error('Failed to update shortcut:', err)
+    }
+  }
+
+  const handleEnterMiniPlayer = async () => {
+    await window.api.enterMiniPlayer()
+  }
+
+  const handleExitMiniPlayer = async () => {
+    await window.api.exitMiniPlayer()
+  }
+
+  useEffect(() => {
+    const unregister = window.api.onMiniPlayerStatus((isMini) => {
+      setIsMiniPlayer(isMini)
+    })
+    return () => {
+      unregister()
+    }
+  }, [])
 
   const loadRecentlyPlayed = async () => {
     try {
@@ -215,6 +397,14 @@ function AppContent() {
     }
   }, [currentTrack])
 
+  // Sync active track to Main process for widget window usage (ONLY from primary window, NOT from widget window)
+  useEffect(() => {
+    if (!isWidgetView) {
+      window.api.setActiveTrack(currentTrack, isPlaying)
+        .catch(err => console.error('[IPC] Failed to sync active track:', err))
+    }
+  }, [currentTrack, isPlaying, isWidgetView])
+
   // Load playlists and auto-scan default library folder on startup
   useEffect(() => {
     const initApp = async () => {
@@ -228,6 +418,13 @@ function AppContent() {
         // Get music folder directory
         const dir = await window.api.getMusicDirectory()
         setMusicDir(dir)
+
+        // Get custom global shortcuts
+        const savedShortcuts = await window.api.getGlobalShortcuts()
+        setShortcuts(savedShortcuts)
+        if (savedShortcuts.miniPlayerType) {
+          setMiniPlayerType(savedShortcuts.miniPlayerType)
+        }
 
         // Scan library
         const initialTracks = await window.api.scanLibrary()
@@ -486,7 +683,21 @@ function AppContent() {
 
   useEffect(() => {
     setActiveDetail(null)
+    handleCloseTagPanel()
   }, [activeTab])
+
+  // Auto-sync tag editor panel with the current playing track when it changes
+  useEffect(() => {
+    if (isTagPanelOpen && currentTrack) {
+      setEditingTrack(currentTrack)
+      setTagTitle(currentTrack.title || '')
+      setTagArtist(currentTrack.artist || '')
+      setTagAlbum(currentTrack.album || '')
+      setTagGenre(currentTrack.genre || '')
+      setTagYear(currentTrack.year ? currentTrack.year.toString() : '')
+      setTagCover(currentTrack.coverPath || null)
+    }
+  }, [currentTrack, isTagPanelOpen])
 
   const renderSortDropdown = () => {
     const sortLabels = {
@@ -626,7 +837,7 @@ function AppContent() {
       return (
         <div className="tab-view">
           <h2 className="tab-title" style={{ marginBottom: '24px' }}>Cài đặt ứng dụng</h2>
-          <div className="settings-section-card" style={{ backgroundColor: '#181818', padding: '24px', borderRadius: '8px', border: '1px solid #282828', maxWidth: '800px' }}>
+          <div className="settings-section-card" style={{ backgroundColor: '#181818', padding: '24px', borderRadius: '8px', border: '1px solid #282828' }}>
             <h3 className="settings-section-title" style={{ margin: '0 0 12px 0', fontSize: '18px', fontWeight: 'bold' }}>Thư mục thư viện nhạc</h3>
             <p className="settings-description" style={{ color: '#b3b3b3', fontSize: '14px', lineHeight: '1.6', margin: '0 0 20px 0' }}>
               Chọn thư mục lưu trữ và quét nhạc của bạn. Toàn bộ file nhạc khi bạn thêm bằng nút "Add Music" sẽ được sao chép vào thư mục này để phát nhạc và đồng bộ thư viện.
@@ -661,7 +872,147 @@ function AppContent() {
               </button>
             </div>
           </div>
+
+          <div className="settings-section-card" style={{ backgroundColor: '#181818', padding: '24px', borderRadius: '8px', border: '1px solid #282828', marginTop: '24px' }}>
+            <h3 className="settings-section-title" style={{ margin: '0 0 12px 0', fontSize: '18px', fontWeight: 'bold' }}>Chế độ Mini Player</h3>
+            <p className="settings-description" style={{ color: '#b3b3b3', fontSize: '14px', lineHeight: '1.6', margin: '0 0 20px 0' }}>
+              Chọn kiểu hiển thị khi bạn kích hoạt chế độ thu nhỏ (Mini Player).
+            </p>
+
+            <div style={{ display: 'flex', gap: '24px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: '#fff', fontSize: '14px' }}>
+                <input 
+                  type="radio" 
+                  name="mini_player_type" 
+                  value="standard" 
+                  checked={miniPlayerType === 'standard'}
+                  onChange={async () => {
+                    setMiniPlayerType('standard')
+                    await window.api.updateGlobalShortcut('mini_player_type', 'standard')
+                  }}
+                  style={{ accentColor: '#1db954' }}
+                />
+                Giao diện nhỏ đầy đủ (360x195 có nút bấm & thanh tiến trình)
+              </label>
+
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: '#fff', fontSize: '14px' }}>
+                <input 
+                  type="radio" 
+                  name="mini_player_type" 
+                  value="cover_only" 
+                  checked={miniPlayerType === 'cover_only'}
+                  onChange={async () => {
+                    setMiniPlayerType('cover_only')
+                    await window.api.updateGlobalShortcut('mini_player_type', 'cover_only')
+                  }}
+                  style={{ accentColor: '#1db954' }}
+                />
+                Widget viên thuốc tối giản (240x60 không viền có nút điều khiển)
+              </label>
+            </div>
+          </div>
+          <div className="settings-section-card" style={{ backgroundColor: '#181818', padding: '24px', borderRadius: '8px', border: '1px solid #282828', marginTop: '24px' }}>
+            <h3 className="settings-section-title" style={{ margin: '0 0 12px 0', fontSize: '18px', fontWeight: 'bold' }}>Chuyển bài đè âm lượng (Crossfade)</h3>
+            <p className="settings-description" style={{ color: '#b3b3b3', fontSize: '14px', lineHeight: '1.6', margin: '0 0 20px 0' }}>
+              Tự động giảm âm lượng bài hát cũ và tăng âm lượng bài hát mới đè lên nhau khi chuyển bài, giúp loại bỏ khoảng lặng.
+            </p>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', maxWidth: '500px' }}>
+              <span style={{ fontSize: '14px', color: '#fff', width: '100px', flexShrink: 0 }}>Crossfade:</span>
+              <input 
+                type="range" 
+                min={0} 
+                max={10} 
+                step={1} 
+                value={crossfadeTime}
+                onChange={(e) => setCrossfadeTime(parseInt(e.target.value, 10))}
+                style={{ flexGrow: 1, accentColor: '#1db954', cursor: 'pointer' }}
+              />
+              <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#1db954', width: '60px', textAlign: 'right', fontFamily: 'monospace' }}>
+                {crossfadeTime === 0 ? 'Tắt' : `${crossfadeTime} giây`}
+              </span>
+            </div>
+          </div>
+          <div className="settings-section-card" style={{ backgroundColor: '#181818', padding: '24px', borderRadius: '8px', border: '1px solid #282828', marginTop: '24px' }}>
+            <h3 className="settings-section-title" style={{ margin: '0 0 12px 0', fontSize: '18px', fontWeight: 'bold' }}>Phím tắt toàn hệ thống (Global Shortcuts)</h3>
+            <p className="settings-description" style={{ color: '#b3b3b3', fontSize: '14px', lineHeight: '1.6', margin: '0 0 20px 0' }}>
+              Cấu hình các phím nóng để điều khiển nhạc ngay cả khi ứng dụng đang ẩn. Nhập phím và ấn Lưu để cập nhật. Nhập "none" để tắt phím nóng đó.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '500px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '14px', color: '#fff' }}>Phát / Tạm dừng:</span>
+                <input 
+                  type="text" 
+                  value={shortcuts.playPause}
+                  onChange={(e) => setShortcuts(prev => ({ ...prev, playPause: e.target.value }))}
+                  style={{ backgroundColor: '#121212', border: '1px solid #282828', color: '#1db954', padding: '8px 12px', borderRadius: '4px', width: '220px', fontSize: '14px', fontFamily: 'monospace' }}
+                  placeholder="MediaPlayPause hoặc Alt+P"
+                />
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '14px', color: '#fff' }}>Bài tiếp theo:</span>
+                <input 
+                  type="text" 
+                  value={shortcuts.next}
+                  onChange={(e) => setShortcuts(prev => ({ ...prev, next: e.target.value }))}
+                  style={{ backgroundColor: '#121212', border: '1px solid #282828', color: '#1db954', padding: '8px 12px', borderRadius: '4px', width: '220px', fontSize: '14px', fontFamily: 'monospace' }}
+                  placeholder="MediaNextTrack hoặc Alt+Right"
+                />
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '14px', color: '#fff' }}>Bài trước đó:</span>
+                <input 
+                  type="text" 
+                  value={shortcuts.prev}
+                  onChange={(e) => setShortcuts(prev => ({ ...prev, prev: e.target.value }))}
+                  style={{ backgroundColor: '#121212', border: '1px solid #282828', color: '#1db954', padding: '8px 12px', borderRadius: '4px', width: '220px', fontSize: '14px', fontFamily: 'monospace' }}
+                  placeholder="MediaPreviousTrack hoặc Alt+Left"
+                />
+              </div>
+
+              <button 
+                className="btn-create-playlist" 
+                style={{ background: '#1db954', color: '#000', fontWeight: 'bold', padding: '10px 20px', borderRadius: '50px', border: 'none', cursor: 'pointer', fontSize: '14px', alignSelf: 'flex-start', marginTop: '8px' }}
+                onClick={async () => {
+                  const s1 = await window.api.updateGlobalShortcut('shortcut_play_pause', shortcuts.playPause)
+                  const s2 = await window.api.updateGlobalShortcut('shortcut_next', shortcuts.next)
+                  const s3 = await window.api.updateGlobalShortcut('shortcut_prev', shortcuts.prev)
+                  if (s1 && s2 && s3) {
+                    setStatusMessage('Đã lưu và áp dụng phím tắt thành công!')
+                    setTimeout(() => setStatusMessage(''), 3000)
+                  } else {
+                    setStatusMessage('Có lỗi xảy ra khi lưu hoặc phím tắt không hợp lệ!')
+                    setTimeout(() => setStatusMessage(''), 3000)
+                  }
+                }}
+              >
+                Lưu phím tắt
+              </button>
+            </div>
+
+            <div style={{ marginTop: '20px', padding: '12px', backgroundColor: '#121212', borderRadius: '6px', fontSize: '12px', color: '#b3b3b3', lineHeight: '1.5' }}>
+              <strong>Hướng dẫn cấu hình:</strong>
+              <ul style={{ margin: '6px 0 0 16px', padding: 0 }}>
+                <li>Phím đa phương tiện: <code>MediaPlayPause</code>, <code>MediaNextTrack</code>, <code>MediaPreviousTrack</code></li>
+                <li>Tổ hợp phím: Dùng dấu cộng, ví dụ <code>Ctrl+Alt+P</code>, <code>Alt+Right</code>, <code>Ctrl+Shift+Space</code></li>
+                <li>Hỗ trợ phím bổ trợ: <code>Ctrl</code>, <code>Alt</code>, <code>Shift</code></li>
+              </ul>
+            </div>
+          </div>
         </div>
+      )
+    }
+
+    if (activeTab === 'download') {
+      return (
+        <DownloadTab 
+          onDownloadSuccess={(updatedTracks) => {
+            setTracks(updatedTracks)
+          }}
+        />
       )
     }
 
@@ -806,6 +1157,17 @@ function AppContent() {
                       </div>
 
                       <div className="col-actions track-action-buttons">
+                        <button 
+                          className="btn-row-edit"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleOpenTagEditor(track)
+                          }}
+                          title="Chỉnh sửa thông tin"
+                        >
+                          <IoCreateOutline size={16} />
+                        </button>
+
                         <button 
                           className={`btn-row-favorite ${track.isFavorite === 1 ? 'liked' : ''}`}
                           onClick={(e) => handleToggleFavorite(e, track)}
@@ -1005,6 +1367,17 @@ function AppContent() {
                       </div>
 
                       <div className="col-actions track-action-buttons">
+                        <button 
+                          className="btn-row-edit"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleOpenTagEditor(track)
+                          }}
+                          title="Chỉnh sửa thông tin"
+                        >
+                          <IoCreateOutline size={16} />
+                        </button>
+
                         <button 
                           className="btn-row-favorite liked"
                           onClick={(e) => handleToggleFavorite(e, track)}
@@ -1246,6 +1619,17 @@ function AppContent() {
                       </div>
 
                       <div className="col-actions track-action-buttons">
+                        <button 
+                          className="btn-row-edit"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleOpenTagEditor(track)
+                          }}
+                          title="Chỉnh sửa thông tin"
+                        >
+                          <IoCreateOutline size={16} />
+                        </button>
+
                         <button 
                           className={`btn-row-favorite ${track.isFavorite === 1 ? 'liked' : ''}`}
                           onClick={(e) => handleToggleFavorite(e, track)}
@@ -1695,7 +2079,343 @@ function AppContent() {
       return <EqualizerTab />
     }
 
+    if (activeTab === 'analytics') {
+      return <AnalyticsTab />
+    }
+
+    if (activeTab === 'tft') {
+      return <TftHubView />
+    }
+
     return null
+  }
+
+  if (isWidgetView) {
+    const [widgetTrack, setWidgetTrack] = useState<any>(null)
+    const [isWidgetPlaying, setIsWidgetPlaying] = useState<boolean>(false)
+    const [isReady, setIsReady] = useState<boolean>(false)
+
+    useEffect(() => {
+      // Delay to ensure the window is fully painted before initiating animation
+      const timer = setTimeout(() => {
+        setIsReady(true)
+      }, 300)
+
+      // Get initial active track
+      window.api.getCurrentActiveTrack().then(({ track, isPlaying }) => {
+        setWidgetTrack(track)
+        setIsWidgetPlaying(isPlaying)
+      }).catch(err => console.error(err))
+
+      // Listen for live track updates from Main
+      const unregister = window.api.onWidgetTrackUpdate((data) => {
+        setWidgetTrack(data.track)
+        setIsWidgetPlaying(data.isPlaying)
+      })
+
+      return () => {
+        unregister()
+        clearTimeout(timer)
+      }
+    }, [])
+
+    useEffect(() => {
+      // Làm trong suốt hoàn toàn html và body để lộ bo tròn 100% của widget viên thuốc
+      document.documentElement.style.backgroundColor = 'transparent'
+      document.body.style.backgroundColor = 'transparent'
+      document.body.style.backgroundImage = 'none'
+      document.body.style.background = 'transparent'
+    }, [])
+
+    const coverUrl = widgetTrack?.coverPath 
+      ? `media://get-file?path=${encodeURIComponent(widgetTrack.coverPath)}` 
+      : null
+
+    const shouldSpin = isReady && isWidgetPlaying
+
+    return (
+      <div 
+        className="widget-pill-layout" 
+        onDoubleClick={async () => {
+          await window.api.exitMiniPlayer()
+        }}
+        title={widgetTrack ? `Đang phát: ${widgetTrack.title} - ${widgetTrack.artist}. Nhấp đúp hoặc bấm nút Options để khôi phục giao diện lớn.` : "Chưa có nhạc phát. Nhấp đúp hoặc bấm nút Options để khôi phục giao diện lớn."}
+        style={{ 
+          width: '100vw', 
+          height: '100vh', 
+          borderRadius: '30px', 
+          overflow: 'hidden', 
+          backgroundColor: 'rgba(18, 18, 18, 0.95)', 
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          padding: '0 12px 0 6px',
+          boxSizing: 'border-box',
+          WebkitAppRegion: 'no-drag', 
+          position: 'relative',
+          userSelect: 'none'
+        } as any}
+      >
+        {/* Album Art (Left) - Drag region for window moving with rotation */}
+        <div style={{ width: '48px', height: '48px', borderRadius: '50%', overflow: 'hidden', backgroundColor: '#282828', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, WebkitAppRegion: 'drag', cursor: 'move', animation: shouldSpin ? 'spin 12s linear infinite' : 'none' } as any}>
+          {coverUrl ? (
+            <img src={coverUrl} alt="Cover" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+          ) : (
+            <IoMusicalNote size={20} style={{ color: '#b3b3b3', animation: shouldSpin ? 'spin 6s linear infinite' : 'none' }} />
+          )}
+        </div>
+
+        {/* Playback Controls (Center) - Set no-drag so they can be clicked */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', WebkitAppRegion: 'no-drag' } as any}>
+          <button 
+            onClick={() => window.api.widgetControlPrev()}
+            style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
+          >
+            <IoPlaySkipBack size={16} />
+          </button>
+
+          <button 
+            onClick={() => window.api.widgetControlPlayPause()}
+            style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#fff', color: '#000', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
+          >
+            {isWidgetPlaying ? <IoPause size={14} /> : <IoPlay size={14} style={{ transform: 'translateX(1px)' }} />}
+          </button>
+
+          <button 
+            onClick={() => window.api.widgetControlNext()}
+            style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
+          >
+            <IoPlaySkipForward size={16} />
+          </button>
+        </div>
+
+        {/* Restore/Maximize Button (Right) - Set no-drag */}
+        <div style={{ WebkitAppRegion: 'no-drag' } as any}>
+          <button 
+            onClick={async () => {
+              await window.api.exitMiniPlayer()
+            }}
+            title="Mở giao diện lớn"
+            style={{ background: 'transparent', border: 'none', color: '#b3b3b3', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
+          >
+            <IoOptionsOutline size={16} />
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (isMiniPlayer) {
+    const coverUrl = currentTrack?.coverPath 
+      ? `media://get-file?path=${encodeURIComponent(currentTrack.coverPath)}` 
+      : null
+
+    return (
+      <div className="mini-player-layout" style={{ width: '100vw', height: '100vh', backgroundColor: '#121212', padding: '16px', boxSizing: 'border-box', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', border: '1px solid #282828', userSelect: 'none', position: 'relative' }}>
+        {/* Drag handle area (since borderless) */}
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '30px', WebkitAppRegion: 'drag', cursor: 'move', zIndex: 1 } as any} />
+        
+        {/* Main Info Row */}
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginTop: '4px', zIndex: 2 }}>
+          <div style={{ width: '56px', height: '56px', borderRadius: '8px', overflow: 'hidden', backgroundColor: '#282828', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            {coverUrl ? (
+              <img src={coverUrl} alt="Cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <IoMusicalNote size={24} style={{ color: '#b3b3b3' }} />
+            )}
+          </div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flexGrow: 1 }}>
+            <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {currentTrack?.title || 'Chưa phát nhạc'}
+            </span>
+            <span style={{ fontSize: '12px', color: '#b3b3b3', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: '4px' }}>
+              {currentTrack?.artist || 'Unknown Artist'}
+            </span>
+          </div>
+        </div>
+
+        {/* Progress bar info */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', zIndex: 2, margin: '8px 0' }}>
+          <div 
+            onClick={(e) => {
+              if (!duration) return
+              const rect = e.currentTarget.getBoundingClientRect()
+              const clickX = e.clientX - rect.left
+              const width = rect.width
+              const percentage = clickX / width
+              seek(percentage * duration)
+            }}
+            style={{ width: '100%', height: '4px', backgroundColor: '#282828', borderRadius: '2px', cursor: 'pointer', position: 'relative' }}
+          >
+            <div style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%`, height: '100%', backgroundColor: '#1db954', borderRadius: '2px' }} />
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#b3b3b3' }}>
+            <span>{formatDuration(currentTime)}</span>
+            <span>{formatDuration(duration)}</span>
+          </div>
+        </div>
+
+        {/* Controls Row */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 2, marginBottom: '4px' }}>
+          {/* Exit mini mode button */}
+          <button 
+            className="control-btn" 
+            onClick={handleExitMiniPlayer}
+            title="Mở giao diện lớn"
+            style={{ background: 'transparent', border: 'none', color: '#b3b3b3', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+          >
+            <IoOptionsOutline size={18} />
+          </button>
+
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+            <button 
+              className="control-btn" 
+              onClick={skipPrevious} 
+              disabled={!currentTrack}
+              style={{ background: 'transparent', border: 'none', color: currentTrack ? '#fff' : '#4d4d4d', cursor: currentTrack ? 'pointer' : 'default' }}
+            >
+              <IoPlaySkipBack size={20} />
+            </button>
+
+            <button 
+              className="control-btn btn-play-pause" 
+              onClick={isPlaying ? pause : resume} 
+              disabled={!currentTrack}
+              style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#fff', color: '#000', border: 'none', cursor: currentTrack ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              {isPlaying ? <IoPause size={18} /> : <IoPlay size={18} style={{ transform: 'translateX(1px)' }} />}
+            </button>
+
+            <button 
+              className="control-btn" 
+              onClick={skipNext} 
+              disabled={!currentTrack}
+              style={{ background: 'transparent', border: 'none', color: currentTrack ? '#fff' : '#4d4d4d', cursor: currentTrack ? 'pointer' : 'default' }}
+            >
+              <IoPlaySkipForward size={20} />
+            </button>
+          </div>
+
+          <div style={{ width: '18px' }} />
+        </div>
+      </div>
+    )
+  }
+
+  const renderTagEditorPanel = () => {
+    const coverUrl = tagCover
+      ? (tagCover.startsWith('media://') ? tagCover : `media://get-file?path=${encodeURIComponent(tagCover)}`)
+      : null
+
+    return (
+      <div className={`tag-editor-panel ${isTagPanelOpen && editingTrack ? 'open' : ''}`}>
+        <div className="panel-header">
+          <h2>Chỉnh sửa thông tin</h2>
+          <button className="panel-close-btn" onClick={handleCloseTagPanel} title="Đóng">
+            <IoCloseOutline size={20} />
+          </button>
+        </div>
+
+        {editingTrack && (
+          <div className="panel-body">
+            {/* Album Cover Section */}
+            <div className="panel-cover-section">
+              <div className="panel-cover-container" onClick={handleSelectCover} title="Nhấp vào để chọn ảnh bìa mới">
+                {coverUrl ? (
+                  <img src={coverUrl} alt="Cover Preview" className="panel-cover-image" />
+                ) : (
+                  <div className="panel-cover-fallback">
+                    <IoMusicalNote size={40} />
+                    <span style={{ fontSize: '11px' }}>Chọn ảnh bìa</span>
+                  </div>
+                )}
+                <div className="panel-cover-overlay">
+                  <IoCreateOutline size={24} />
+                  <span>Thay đổi ảnh</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Form Fields */}
+            <div className="panel-form">
+              <div className="panel-form-group">
+                <label>Tiêu đề</label>
+                <input 
+                  type="text" 
+                  className="panel-input"
+                  value={tagTitle} 
+                  onChange={(e) => setTagTitle(e.target.value)}
+                  placeholder="Nhập tiêu đề bài hát..."
+                />
+              </div>
+
+              <div className="panel-form-group">
+                <label>Nghệ sĩ</label>
+                <input 
+                  type="text" 
+                  className="panel-input"
+                  value={tagArtist} 
+                  onChange={(e) => setTagArtist(e.target.value)}
+                  placeholder="Nhập nghệ sĩ..."
+                />
+              </div>
+
+              <div className="panel-form-group">
+                <label>Album</label>
+                <input 
+                  type="text" 
+                  className="panel-input"
+                  value={tagAlbum} 
+                  onChange={(e) => setTagAlbum(e.target.value)}
+                  placeholder="Nhập tên album..."
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <div className="panel-form-group" style={{ flex: 1 }}>
+                  <label>Thể loại</label>
+                  <input 
+                    type="text" 
+                    className="panel-input"
+                    value={tagGenre} 
+                    onChange={(e) => setTagGenre(e.target.value)}
+                    placeholder="Thể loại..."
+                  />
+                </div>
+
+                <div className="panel-form-group" style={{ width: '90px' }}>
+                  <label>Năm</label>
+                  <input 
+                    type="text" 
+                    className="panel-input"
+                    style={{ textAlign: 'center' }}
+                    value={tagYear} 
+                    onChange={(e) => {
+                      const v = e.target.value.replace(/\D/g, '')
+                      setTagYear(v)
+                    }}
+                    placeholder="YYYY"
+                    maxLength={4}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px' , marginBottom: '42px' }}>
+                <button className="btn-panel-cancel" onClick={handleCloseTagPanel}>
+                  Hủy
+                </button>
+                <button className="btn-panel-save" onClick={handleSaveTags} disabled={isSavingTags}>
+                  {isSavingTags ? 'Đang lưu...' : 'Lưu'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    )
   }
 
   return (
@@ -1703,88 +2423,121 @@ function AppContent() {
       {/* Spotify Top Header */}
       <header className="top-header">
         <div className="top-header-left">
-          <div className="header-brand-logo">
+          <div 
+            className="header-brand-logo" 
+            onClick={() => setActiveApp('hub')} 
+            style={{ cursor: 'pointer' }}
+            title="Quay về Waveform Hub"
+          >
             <IoFlash size={22} color="#1ed760" />
             <span className="logo-text">Waveform</span>
           </div>
           
-          <button 
-            className={`header-home-btn ${activeTab === 'library' && !searchQuery ? 'active' : ''}`}
-            onClick={() => {
-              setSearchQuery('')
-              setActiveTab('library')
-            }}
-            title="Trang chủ / Thư viện"
-          >
-            <IoHome size={20} />
-          </button>
+          {activeApp !== 'hub' && (
+            <button 
+              className="header-home-btn"
+              onClick={() => setActiveApp('hub')}
+              title="Quay lại Waveform Hub"
+            >
+              <IoArrowBackOutline size={20} />
+            </button>
+          )}
         </div>
 
         <div className="top-header-center">
-          <div className="header-search-bar">
-            <IoSearchOutline className="search-icon" size={20} />
-            <input
-              type="text"
-              placeholder="Bạn muốn phát nội dung gì?"
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value)
-                if (activeTab !== 'library') {
-                  setActiveTab('library')
-                }
-              }}
-              className="header-search-input"
-            />
-          </div>
-        </div>
-
-        <div className="top-header-right">
-          <button 
-            className="btn-primary btn-add-music-header" 
-            onClick={handleAddMusic} 
-            disabled={isScanning}
-          >
-            {isScanning ? 'Đang xử lý...' : 'Add Music'}
-          </button>
-          
-          <div className="header-avatar" title="Người dùng">
-            <IoPersonOutline size={18} />
-          </div>
+          {activeApp === 'music' && (
+            <div className="header-search-bar">
+              <IoSearchOutline className="search-icon" size={20} />
+              <input
+                type="text"
+                placeholder="Bạn muốn phát nội dung gì?"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value)
+                  if (activeTab !== 'library') {
+                    setActiveTab('library')
+                  }
+                }}
+                className="header-search-input"
+              />
+            </div>
+          )}
         </div>
       </header>
 
       {/* Main Layout containing Sidebar and Content Container */}
-      <div className="app-main-layout">
-        <Sidebar 
-          activeTab={activeTab} 
-          setActiveTab={setActiveTab} 
-          playlists={playlists}
-          onCreatePlaylist={handleCreatePlaylist}
-        />
-
-        <div className="content-container">
-          {/* Notification status bar */}
-          {statusMessage && !isScanning && (
-            <div className="status-toast-bar">
-              <span>{statusMessage}</span>
+      <div className={`app-main-layout ${activeApp !== 'music' ? 'no-player' : ''}`}>
+        {activeApp === 'hub' && (
+          <>
+            <HubSidebar 
+              activeApp={activeApp} 
+              setActiveApp={setActiveApp} 
+              trackCount={tracks.length} 
+            />
+            <div className="content-container">
+              <HubView />
             </div>
-          )}
+          </>
+        )}
 
-          {isScanning && (
-            <div className="top-scan-loader">
-              <div className="spinner"></div>
-              <span>Đang xử lý thư viện...</span>
+        {activeApp === 'music' && (
+          <>
+            <Sidebar 
+              activeTab={activeTab} 
+              setActiveTab={setActiveTab} 
+              playlists={playlists}
+              onCreatePlaylist={handleCreatePlaylist}
+            />
+
+            <div className="content-container">
+              {/* Notification status bar */}
+              {statusMessage && !isScanning && (
+                <div className="status-toast-bar">
+                  <span>{statusMessage}</span>
+                </div>
+              )}
+
+              {isScanning && (
+                <div className="top-scan-loader">
+                  <div className="spinner"></div>
+                  <span>Đang xử lý thư viện...</span>
+                </div>
+              )}
+
+              <main className="main-content">
+                {renderContent()}
+              </main>
+              {renderTagEditorPanel()}
             </div>
-          )}
+          </>
+        )}
 
-          <main className="main-content">
-            {renderContent()}
-          </main>
-        </div>
+        {activeApp === 'tft' && (
+          <>
+            <TftSidebar activeTab={tftTab} setActiveTab={setTftTab} />
+            <div className="content-container">
+              <TftHubView />
+            </div>
+          </>
+        )}
+        {activeApp === 'gd' && (
+          <>
+            <DemonSidebar activeTab={gdTab} setActiveTab={setGdTab} />
+            <div className="content-container">
+              {gdTab === 'demonlist' ? <DemonlistView /> : <DemonChangelogView />}
+            </div>
+          </>
+        )}
       </div>
 
-      {/* Spotify bottom NowPlayingBar control */}
-      <NowPlayingBar activeTab={activeTab} setActiveTab={setActiveTab} />
+      {/* Spotify bottom NowPlayingBar control - ONLY visible in Spotify */}
+      <div style={{ display: activeApp === 'music' ? 'block' : 'none' }}>
+        <NowPlayingBar 
+          activeTab={activeTab} 
+          setActiveTab={setActiveTab} 
+          onEnterMiniPlayer={handleEnterMiniPlayer}
+        />
+      </div>
     </div>
   )
 }
