@@ -1,3 +1,4 @@
+import { ValorantPlayerProfile, ValorantMatch } from './valorant-types'
 import { GdDemonLevel, GdChangelogItem } from './types'
 import { TftComp, TftCompDetail } from './tft-types'
 import { Track, Playlist } from './types'
@@ -79,6 +80,10 @@ export interface IPCBridge {
   };
 
   // TFT Tactics Module
+  valorant: {
+    getPlayerProfile: (name: string, tag: string) => Promise<ValorantPlayerProfile | null>;
+    getPlayerMatches: (name: string, tag: string, region?: string) => Promise<ValorantMatch[]>;
+  };
   tft: {
     getTierList: (rankTier?: string, days?: number) => Promise<TftComp[]>;
     getCompDetails: (clusterId: string) => Promise<TftCompDetail>;

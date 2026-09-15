@@ -1,3 +1,4 @@
+import { SiValorant } from 'react-icons/si'
 import React from 'react'
 import { IoVolumeHighOutline } from 'react-icons/io5'
 import { usePlayer } from '../player/use-player'
@@ -6,8 +7,8 @@ import tftLogo from '../../assets/teamfight-tactics-logo.png'
 import gdLogo from '../../assets/geometry-dash-logo.png'
 
 interface HubSidebarProps {
-  activeApp: 'hub' | 'music' | 'tft' | 'gd';
-  setActiveApp: (app: 'hub' | 'music' | 'tft' | 'gd') => void;
+  activeApp: 'hub' | 'music' | 'tft' | 'gd' | 'valorant';
+  setActiveApp: (app: 'hub' | 'music' | 'tft' | 'gd' | 'valorant') => void;
   trackCount?: number;
 }
 
@@ -75,6 +76,22 @@ export default function HubSidebar({ activeApp, setActiveApp, trackCount = 0 }: 
               <span className="hub-app-name">Demonlist</span>
             </div>
             <span className="hub-app-sub">Extreme Demons & Changelog</span>
+          </div>
+        </button>
+              {/* App 4: Valorant Tracker */}
+        <button 
+          className={`hub-app-item ${activeApp === 'valorant' ? 'active' : ''}`}
+          onClick={() => setActiveApp('valorant')}
+          title="Mở Valorant Player Tracker"
+        >
+          <div className="hub-app-icon-wrap val-theme">
+            <SiValorant size={22} color="#ff4655" />
+          </div>
+          <div className="hub-app-details">
+            <div className="hub-app-title-row">
+              <span className="hub-app-name">Valorant</span>
+            </div>
+            <span className="hub-app-sub">Player Stats & Rank Tracker</span>
           </div>
         </button>
       </nav>

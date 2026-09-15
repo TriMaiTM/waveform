@@ -52,3 +52,10 @@ temp/
 tmp/
 .gemini/
 .agents/skills-lock.json
+
+# Secrets & Environment variables
+.env
+.env.*
+*.local
+*secret*
+config.local.json

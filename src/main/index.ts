@@ -1,6 +1,7 @@
+import { registerValorantIpcHandlers } from './valorant-ipc'
 import { registerGdIpcHandlers } from './gd-ipc'
 import { registerTftIpcHandlers } from './tft-ipc'
-import { app, BrowserWindow, protocol, net, globalShortcut, Tray, Menu, nativeImage } from 'electron'
+import { app, BrowserWindow, shell, session, protocol, net, globalShortcut, Tray, Menu, nativeImage } from 'electron'
 import path from 'path'
 import { pathToFileURL } from 'url'
 import { initDB } from './db'
@@ -8,6 +9,7 @@ import { registerIPCHandlers, exitMiniPlayerMode } from './ipc-handlers'
 import { getMusicDirectory } from './library-scanner'
 import fs from 'fs'
 import { Readable } from 'stream'
+
 
 // Suppress Chromium disk cache locking errors on Windows dev environments
 app.commandLine.appendSwitch('disable-gpu-cache')
@@ -65,6 +67,13 @@ function createWindow(): void {
     console.log(`[Renderer L${level}] ${message} (${sourceId}:${line})`)
   })
 
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith('https:') || url.startsWith('http:')) {
+      shell.openExternal(url)
+    }
+    return { action: 'deny' }
+  })
+
   mainWindow.on('close', (event) => {
     if (!isQuiting) {
       event.preventDefault()
@@ -88,10 +97,23 @@ app.whenReady().then(() => {
   // Initialize Database
   initDB()
 
+  // Intercept YouTube embed requests to supply a valid HTTP Referer in production (where file:// is used)
+  session.defaultSession.webRequest.onBeforeSendHeaders(
+    { urls: ['*://www.youtube.com/*', '*://www.youtube-nocookie.com/*'] },
+    (details, callback) => {
+      const headers = { ...details.requestHeaders }
+      if (!headers['Referer'] || headers['Referer'].startsWith('file:')) {
+        headers['Referer'] = 'http://localhost:5173/'
+      }
+      callback({ cancel: false, requestHeaders: headers })
+    }
+  )
+
   // Register IPC handlers
   registerIPCHandlers()
   registerTftIpcHandlers()
   registerGdIpcHandlers()
+  registerValorantIpcHandlers()
 
   // Hide default menu bar (File, Edit, View, etc.) vĩnh viễn
   Menu.setApplicationMenu(null)

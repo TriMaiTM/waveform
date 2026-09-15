@@ -8,7 +8,8 @@ import {
   IoTrophyOutline,
   IoVideocamOutline,
   IoPersonOutline,
-  IoShieldCheckmarkOutline
+  IoShieldCheckmarkOutline,
+  IoOpenOutline
 } from 'react-icons/io5'
 
 interface DemonDetailModalProps {
@@ -76,9 +77,23 @@ export default function DemonDetailModal({ demon, onClose }: DemonDetailModalPro
             <span style={{ color: '#ff5e00', marginRight: '6px' }}>{demon.position}</span>
             <span>{demon.name}</span>
           </h2>
-          <button className="gd-modal-close-btn" onClick={onClose}>
-            <IoCloseOutline size={24} />
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {videoId && (
+              <a
+                href={detailData?.verifications?.[0]?.video_url || demon.video_url || `https://www.youtube.com/watch?v=${videoId}`}
+                target="_blank"
+                rel="noreferrer"
+                className="gd-watch-yt-btn"
+                title="Mở video này trên YouTube"
+              >
+                <IoOpenOutline size={16} />
+                <span>Xem trên YouTube</span>
+              </a>
+            )}
+            <button className="gd-modal-close-btn" onClick={onClose} title="Đóng">
+              <IoCloseOutline size={24} />
+            </button>
+          </div>
         </div>
 
         <div className="gd-modal-content">

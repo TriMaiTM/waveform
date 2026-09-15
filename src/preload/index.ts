@@ -69,6 +69,10 @@ const api: IPCBridge = {
     getChangelog: (forceRefresh?: boolean) => ipcRenderer.invoke('gd:get-changelog', forceRefresh),
     getDemonDetail: (uuid: string) => ipcRenderer.invoke('gd:get-demon-detail', uuid)
   },
+  valorant: {
+    getPlayerProfile: (name: string, tag: string) => ipcRenderer.invoke('valorant:get-player-profile', name, tag),
+    getPlayerMatches: (name: string, tag: string, region?: string) => ipcRenderer.invoke('valorant:get-player-matches', name, tag, region)
+  },
   tft: {
     getTierList: (rankTier?: string, days?: number) => ipcRenderer.invoke('tft:get-tierlist', rankTier, days),
     getCompDetails: (clusterId: string) => ipcRenderer.invoke('tft:get-comp-details', clusterId),

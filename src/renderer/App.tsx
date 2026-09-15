@@ -1,3 +1,9 @@
+import ValorantSidebar, { ValorantSubtab } from './valorant/ValorantSidebar'
+import ValorantWeaponsView from './valorant/ValorantWeaponsView'
+import ValorantAgentsView from './valorant/ValorantAgentsView'
+import ValorantCollectionView from './valorant/ValorantCollectionView'
+import ValorantTrackerView from './valorant/ValorantTrackerView'
+import { ValorantSearchItem } from '../shared/valorant-types'
 import React, { useState, useEffect, useRef } from 'react'
 import { Track, Playlist } from '../shared/types'
 import { PlayerProvider } from './spotify/player/player-context'
@@ -71,8 +77,38 @@ const getDominantColor = (imgUrl: string): Promise<string> => {
 }
 
 function AppContent() {
-  const [activeApp, setActiveApp] = useState<'hub' | 'music' | 'tft' | 'gd'>('hub')
+  const [activeApp, setActiveApp] = useState<'hub' | 'music' | 'tft' | 'gd' | 'valorant'>('hub')
   const [gdTab, setGdTab] = useState<'demonlist' | 'changelog'>('demonlist')
+  // Valorant state
+  const [valPinned, setValPinned] = useState<ValorantSearchItem | null>(() => {
+    try {
+      const raw = localStorage.getItem('val_pinned_player');
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  });
+  const [valHistory, setValHistory] = useState<ValorantSearchItem[]>(() => {
+    try {
+      const raw = localStorage.getItem('val_history');
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) { return []; }
+  });
+  const [valTargetSearch, setValTargetSearch] = useState<{ name: string; tag: string } | null>(null);
+  const [valSubtab, setValSubtab] = useState<ValorantSubtab>('tracker');
+
+  const handleValProfileLoaded = (item: ValorantSearchItem) => {
+    setValHistory(prev => {
+      const filtered = prev.filter(x => !(x.name.toLowerCase() === item.name.toLowerCase() && x.tag.toLowerCase() === item.tag.toLowerCase()));
+      const next = [item, ...filtered].slice(0, 10);
+      try { localStorage.setItem('val_history', JSON.stringify(next)); } catch (e) {}
+      return next;
+    });
+    // Check pin status
+    try {
+      const raw = localStorage.getItem('val_pinned_player');
+      if (raw) setValPinned(JSON.parse(raw));
+    } catch (e) {}
+  };
+
   const [tftTab, setTftTab] = useState<string>('comp')
   const [tracks, setTracks] = useState<Track[]>([])
   const [playlists, setPlaylists] = useState<Playlist[]>([])
@@ -2525,6 +2561,32 @@ function AppContent() {
             <DemonSidebar activeTab={gdTab} setActiveTab={setGdTab} />
             <div className="content-container">
               {gdTab === 'demonlist' ? <DemonlistView /> : <DemonChangelogView />}
+            </div>
+          </>
+        )}
+        {activeApp === 'valorant' && (
+          <>
+            <ValorantSidebar 
+              activeSubtab={valSubtab}
+              onSelectSubtab={setValSubtab}
+              pinnedPlayer={valPinned}
+              history={valHistory}
+              onSelectPlayer={(name, tag) => {
+                setValSubtab('tracker');
+                setValTargetSearch({ name, tag });
+              }}
+              activePlayer={valTargetSearch ? `${valTargetSearch.name}#${valTargetSearch.tag}` : null}
+            />
+            <div className="content-container">
+              {valSubtab === 'tracker' && (
+                <ValorantTrackerView 
+                  onProfileLoaded={handleValProfileLoaded}
+                  initialSearch={valTargetSearch}
+                />
+              )}
+              {valSubtab === 'weapons' && <ValorantWeaponsView />}
+              {valSubtab === 'agents' && <ValorantAgentsView />}
+              {valSubtab === 'collection' && <ValorantCollectionView />}
             </div>
           </>
         )}
