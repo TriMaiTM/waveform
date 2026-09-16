@@ -387,15 +387,17 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  background: rgba(14, 7, 22, 0.85);
-  border: 2px solid #1ed760;
-  border-radius: 6px;
-  padding: 8px 14px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), inset 0 0 8px rgba(30, 215, 96, 0.15);
-  backdrop-filter: blur(8px);
+  background: linear-gradient(135deg, rgba(15, 25, 35, 0.94) 0%, rgba(18, 27, 36, 0.96) 100%);
+  border: 1px solid #232f3e;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+  border-radius: 0;
+  padding: 10px 18px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
   flex-shrink: 0;
   width: 100%;
   box-sizing: border-box;
+  transition: border-color 0.2s;
 }
 
 /* REAL METALLIC BEJEWELED CREST BADGE */
@@ -663,9 +665,7 @@
 
 .retro-user-name {
   color: #ffffff;
-  text-decoration: underline;
-  text-decoration-color: #1ed760;
-  text-underline-offset: 3px;
+  font-weight: 700;
 }
 
 .retro-edit-name-btn {
@@ -724,14 +724,16 @@
 .retro-top-clock-display {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  background: rgba(14, 7, 22, 0.75);
-  border: 1px solid rgba(30, 215, 96, 0.3);
-  padding: 8px 12px;
-  border-radius: 6px;
-  backdrop-filter: blur(8px);
+  gap: 4px;
+  background: linear-gradient(180deg, rgba(15, 25, 35, 0.94) 0%, rgba(12, 19, 27, 0.96) 100%);
+  border: 1px solid #232f3e;
+  /* border-left accent removed */
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+  padding: 10px 16px;
+  border-radius: 0;
+  backdrop-filter: blur(12px);
   width: fit-content;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
 }
 
 .retro-digital-clock-compact {
@@ -790,12 +792,13 @@
   flex-direction: column;
   gap: 12px;
   z-index: 8;
-  background: rgba(14, 7, 22, 0.88);
-  border: 2px solid #1ed760;
-  border-radius: 8px;
-  padding: 10px 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6), inset 0 0 10px rgba(30, 215, 96, 0.15);
-  backdrop-filter: blur(8px);
+  background: rgba(15, 25, 35, 0.94);
+  border: 1px solid #232f3e;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%);
+  border-radius: 0;
+  padding: 12px 10px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(12px);
 }
 
 .dock-btn {
@@ -1407,13 +1410,16 @@
 .settings-master-overlay {
   position: fixed;
   inset: 0;
-  z-index: 9999;
-  background: rgba(0, 0, 0, 0.78);
-  backdrop-filter: blur(16px);
+  width: 100vw;
+  height: 100vh;
+  z-index: 99999;
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 0;
   box-sizing: border-box;
   animation: modalFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
@@ -1424,14 +1430,14 @@
 }
 
 .settings-master-modal {
-  width: 920px;
-  max-width: 95vw;
-  height: 640px;
-  max-height: 90vh;
-  background: #121212;
-  border: 1.5px solid #1ed760;
-  border-radius: 12px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.9), 0 0 35px rgba(30, 215, 96, 0.22);
+  width: 100vw;
+  height: 100vh;
+  max-width: 100vw;
+  max-height: 100vh;
+  background: #0f1923;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1906,4 +1912,356 @@
   height: 100%;
   pointer-events: none;
   z-index: 1;
+}
+
+/* ==========================================================================
+   TACTICAL SETTINGS PANEL CONTROLS & PARTICLE OPTIONS
+   ========================================================================== */
+
+/* Fullscreen Settings Header & Body adjustments */
+.settings-master-header {
+  height: 60px;
+  background: #0d151d;
+  border-bottom: 1px solid #232f3e;
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.settings-vertical-sidebar {
+  width: 250px;
+  background: #0a1017;
+  border-right: 1px solid #232f3e;
+  padding: 20px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.settings-master-content {
+  flex: 1;
+  padding: 32px 56px;
+  overflow-y: auto;
+  background: #121b24;
+}
+
+/* Tactical Settings Card Section */
+.settings-card-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: #16222f;
+  border: 1px solid #232f3e;
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+
+.settings-section-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.settings-section-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.settings-section-desc {
+  font-size: 12px;
+  color: #8b9bb4;
+  line-height: 1.4;
+}
+
+/* Clock Options Grid (24h vs 12h) */
+.clock-options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.clock-option-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 18px;
+  background: #121b24;
+  border: 1px solid #232f3e;
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+  color: inherit;
+}
+
+.clock-option-card:hover {
+  background: #192736;
+  border-color: #34475c;
+}
+
+.clock-option-card.selected {
+  background: rgba(30, 215, 96, 0.1);
+  border-color: #1ed760;
+  box-shadow: 0 0 14px rgba(30, 215, 96, 0.25);
+}
+
+.clock-preview-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ece8e1;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.clock-preview-sample {
+  font-size: 18px;
+  font-weight: 800;
+  color: #1ed760;
+  font-family: monospace;
+  letter-spacing: 0.05em;
+}
+
+/* Modern Tactical Toggle Rows & Switches */
+.settings-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #121b24;
+  border: 1px solid #232f3e;
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
+  margin-bottom: 8px;
+  box-sizing: border-box;
+}
+
+.toggle-label-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.toggle-main-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ece8e1;
+}
+
+.toggle-sub-label {
+  font-size: 11px;
+  color: #8b9bb4;
+}
+
+.settings-toggle-switch {
+  width: 48px;
+  height: 26px;
+  border-radius: 13px;
+  background: #233140;
+  border: 1px solid #34475c;
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.22s ease;
+  padding: 0;
+  outline: none;
+}
+
+.toggle-handle {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #8b9bb4;
+  position: absolute;
+  top: 2px;
+  left: 3px;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), background 0.22s ease;
+  display: block;
+}
+
+.settings-toggle-switch.active {
+  background: #1ed760;
+  border-color: #1ed760;
+  box-shadow: 0 0 12px rgba(30, 215, 96, 0.45);
+}
+
+.settings-toggle-switch.active .toggle-handle {
+  transform: translateX(22px);
+  background: #0f1923;
+}
+
+/* Font Option Rows */
+.clock-font-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.clock-font-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #121b24;
+  border: 1px solid #232f3e;
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.clock-font-row:hover {
+  background: #192736;
+  border-color: #34475c;
+}
+
+.clock-font-row.selected {
+  background: rgba(30, 215, 96, 0.1);
+  border-color: #1ed760;
+  box-shadow: 0 0 12px rgba(30, 215, 96, 0.2);
+}
+
+.clock-font-row .font-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ece8e1;
+}
+
+.clock-font-row .font-preview {
+  font-size: 16px;
+  color: #1ed760;
+}
+
+/* Custom Greeting Input */
+.custom-bg-input-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.settings-text-input {
+  flex: 1;
+  background: #0f1923;
+  border: 1px solid #232f3e;
+  color: #ece8e1;
+  padding: 10px 14px;
+  font-size: 13px;
+  clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 4px 100%, 0 calc(100% - 4px));
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.settings-text-input:focus {
+  border-color: #1ed760;
+  box-shadow: 0 0 10px rgba(30, 215, 96, 0.25);
+}
+
+/* Particle Modes Grid */
+.particle-modes-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.particle-mode-card {
+  background: #121b24;
+  border: 1px solid #232f3e;
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.particle-mode-card:hover {
+  background: #192736;
+  border-color: #34475c;
+}
+
+.particle-mode-card.selected {
+  background: rgba(30, 215, 96, 0.1);
+  border-color: #1ed760;
+  box-shadow: 0 0 14px rgba(30, 215, 96, 0.25);
+}
+
+.particle-mode-icon {
+  font-size: 26px;
+}
+
+.particle-mode-name {
+  font-size: 12px;
+  font-weight: 800;
+  color: #ffffff;
+  text-transform: uppercase;
+}
+
+.particle-mode-desc {
+  font-size: 10px;
+  color: #8b9bb4;
+  line-height: 1.3;
+}
+
+/* Particle Color Palette */
+.particle-color-palette {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.color-chip-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 4px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s;
+}
+
+.color-chip-btn:hover {
+  transform: scale(1.1);
+}
+
+.color-chip-btn.selected {
+  border-color: #ffffff;
+  transform: scale(1.15);
+  box-shadow: 0 0 10px currentColor;
+}
+
+.color-picker-custom-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #121b24;
+  border: 1px solid #232f3e;
+  padding: 5px 12px;
+  clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 4px 100%, 0 calc(100% - 4px));
+}
+
+.color-picker-input {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.color-hex-label {
+  font-family: monospace;
+  font-size: 12px;
+  color: #ffffff;
+  font-weight: 700;
 }

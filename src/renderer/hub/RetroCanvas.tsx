@@ -127,6 +127,20 @@ export default function RetroCanvas() {
   });
 
   const [showPetals, setShowPetals] = useState<boolean>(() => localStorage.getItem('waveform_hub_show_petals') !== 'false');
+  const [particleMode, setParticleMode] = useState<'sakura' | 'snow' | 'fireflies' | 'stardust'>(() => {
+    return (localStorage.getItem('waveform_hub_particle_mode') as any) || 'sakura';
+  });
+  const [particleColor, setParticleColor] = useState<string>(() => {
+    return localStorage.getItem('waveform_hub_particle_color') || '#1ed760';
+  });
+  const [particleSpeed, setParticleSpeed] = useState<number>(() => {
+    const s = localStorage.getItem('waveform_hub_particle_speed');
+    return s ? parseFloat(s) : 1.0;
+  });
+  const [particleWind, setParticleWind] = useState<number>(() => {
+    const s = localStorage.getItem('waveform_hub_particle_wind');
+    return s ? parseFloat(s) : 0.5;
+  });
   const [petalDensity, setPetalDensity] = useState<number>(() => {
     const saved = localStorage.getItem('waveform_hub_petal_density');
     return saved !== null ? parseInt(saved, 10) : 45;
@@ -234,7 +248,7 @@ export default function RetroCanvas() {
     return () => clearInterval(interval);
   }, [clockFormat, showSeconds, customGreeting]);
 
-  // Falling Petals Canvas Animation
+  // Multi-mode Realistic Canvas Particle Animation
   useEffect(() => {
     if (!showPetals) return;
     const canvas = canvasRef.current;
@@ -253,87 +267,182 @@ export default function RetroCanvas() {
     };
     window.addEventListener('resize', handleResize);
 
-    const petals: Array<{
-      x: number;
-      y: number;
-      size: number;
-      speedX: number;
-      speedY: number;
-      angle: number;
-      spin: number;
-      color: string;
-    }> = [];
-
-    const colors = ['#57e78d', '#1ed760', '#a7f3d0', '#10b981', '#34d399', '#ffffff'];
-
-    for (let i = 0; i < petalDensity; i++) {
-      petals.push({
+    const count = petalDensity;
+    const particles = Array.from({ length: count }, () => {
+      return {
         x: Math.random() * width,
         y: Math.random() * height,
-        size: Math.random() * 4 + 2.5,
-        speedX: Math.random() * 1.2 - 0.4,
-        speedY: Math.random() * 1.1 + 0.5,
+        size: Math.random() * 5 + 3,
+        speedX: (Math.random() * 1.2 - 0.4) + particleWind,
+        speedY: (Math.random() * 1.4 + 0.6) * particleSpeed,
         angle: Math.random() * Math.PI * 2,
-        spin: Math.random() * 0.03 - 0.015,
-        color: colors[Math.floor(Math.random() * colors.length)]
-      });
-    }
+        spin: (Math.random() * 0.04 - 0.02) * particleSpeed,
+        flip: Math.random() * Math.PI * 2,
+        flipSpeed: (Math.random() * 0.03 + 0.01) * particleSpeed,
+        alpha: Math.random() * 0.6 + 0.4,
+        pulse: Math.random() * Math.PI * 2,
+        pulseSpeed: Math.random() * 0.03 + 0.015,
+        wobble: Math.random() * Math.PI * 2,
+        seed: Math.random() * 100
+      };
+    });
 
-    const fireflies = Array.from({ length: 18 }, () => ({
-      x: Math.random() * width,
-      y: Math.random() * height,
-      r: Math.random() * 2 + 1,
-      alpha: Math.random(),
-      speedAlpha: Math.random() * 0.02 + 0.01,
-      vx: (Math.random() - 0.5) * 0.35,
-      vy: (Math.random() - 0.5) * 0.35
-    }));
+    let time = 0;
 
     const render = () => {
+      time += 0.016;
       ctx.clearRect(0, 0, width, height);
 
-      // Render Fireflies (Emerald Glow)
-      fireflies.forEach(f => {
-        f.x += f.vx;
-        f.y += f.vy;
-        f.alpha += f.speedAlpha;
-        if (f.alpha > 1 || f.alpha < 0.1) f.speedAlpha = -f.speedAlpha;
-        if (f.x < 0) f.x = width;
-        if (f.x > width) f.x = 0;
-        if (f.y < 0) f.y = height;
-        if (f.y > height) f.y = 0;
+      // MODE 1: SAKURA (Realistic 3D fluttering petals)
+      if (particleMode === 'sakura') {
+        particles.forEach(p => {
+          p.x += (p.speedX + Math.sin(time + p.seed) * 0.5) * particleSpeed;
+          p.y += p.speedY * particleSpeed;
+          p.angle += p.spin;
+          p.flip += p.flipSpeed;
 
-        ctx.fillStyle = `rgba(30, 215, 96, ${Math.max(0, f.alpha)})`;
-        ctx.shadowColor = '#1ed760';
-        ctx.shadowBlur = 8;
-        ctx.beginPath();
-        ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
-        ctx.fill();
-      });
-      ctx.shadowBlur = 0;
+          if (p.y > height + 20) {
+            p.y = -20;
+            p.x = Math.random() * width;
+          }
+          if (p.x > width + 20) p.x = -20;
+          if (p.x < -20) p.x = width + 20;
 
-      // Render Petals
-      petals.forEach(p => {
-        p.x += p.speedX;
-        p.y += p.speedY;
-        p.angle += p.spin;
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.angle);
+          ctx.scale(Math.cos(p.flip), 1);
 
-        if (p.y > height) {
-          p.y = -10;
-          p.x = Math.random() * width;
-        }
-        if (p.x > width) p.x = 0;
-        if (p.x < 0) p.x = width;
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.bezierCurveTo(p.size * 0.6, -p.size * 0.8, p.size * 1.3, -p.size * 0.2, 0, p.size * 1.5);
+          ctx.bezierCurveTo(-p.size * 1.3, -p.size * 0.2, -p.size * 0.6, -p.size * 0.8, 0, 0);
 
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.rotate(p.angle);
-        ctx.fillStyle = p.color;
-        ctx.shadowColor = '#1ed760';
-        ctx.shadowBlur = 4;
-        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 1.4);
-        ctx.restore();
-      });
+          ctx.fillStyle = particleColor;
+          ctx.globalAlpha = p.alpha;
+          ctx.shadowColor = particleColor;
+          ctx.shadowBlur = 6;
+          ctx.fill();
+          ctx.restore();
+        });
+      }
+
+      // MODE 2: SNOW (Layered crystalline snowfall)
+      else if (particleMode === 'snow') {
+        particles.forEach((p, idx) => {
+          p.x += (Math.sin(time * 1.5 + p.seed) * 0.8 + particleWind) * particleSpeed;
+          p.y += (p.speedY * 0.85) * particleSpeed;
+          p.angle += p.spin * 0.5;
+
+          if (p.y > height + 15) {
+            p.y = -15;
+            p.x = Math.random() * width;
+          }
+          if (p.x > width + 15) p.x = -15;
+          if (p.x < -15) p.x = width + 15;
+
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.globalAlpha = p.alpha;
+
+          if (idx % 3 === 0) {
+            ctx.rotate(p.angle);
+            ctx.strokeStyle = particleColor;
+            ctx.lineWidth = 1.2;
+            ctx.shadowColor = particleColor;
+            ctx.shadowBlur = 4;
+            const armLen = p.size * 1.4;
+            for (let a = 0; a < 6; a++) {
+              ctx.beginPath();
+              ctx.moveTo(0, 0);
+              ctx.lineTo(0, armLen);
+              ctx.moveTo(0, armLen * 0.55);
+              ctx.lineTo(armLen * 0.35, armLen * 0.75);
+              ctx.moveTo(0, armLen * 0.55);
+              ctx.lineTo(-armLen * 0.35, armLen * 0.75);
+              ctx.stroke();
+              ctx.rotate(Math.PI / 3);
+            }
+          } else {
+            ctx.beginPath();
+            ctx.arc(0, 0, p.size * 0.6, 0, Math.PI * 2);
+            ctx.fillStyle = particleColor;
+            ctx.shadowColor = particleColor;
+            ctx.shadowBlur = 8;
+            ctx.fill();
+          }
+          ctx.restore();
+        });
+      }
+
+      // MODE 3: FIREFLIES (Luminous wandering orbs)
+      else if (particleMode === 'fireflies') {
+        particles.forEach(p => {
+          p.x += (Math.sin(time * 0.7 + p.seed) * 0.9 + (p.speedX * 0.2)) * particleSpeed;
+          p.y += (Math.cos(time * 0.5 + p.seed * 1.3) * 0.9 - 0.2) * particleSpeed;
+          p.pulse += p.pulseSpeed;
+
+          if (p.y < -20) p.y = height + 20;
+          if (p.y > height + 20) p.y = -20;
+          if (p.x < -20) p.x = width + 20;
+          if (p.x > width + 20) p.x = -20;
+
+          const currentAlpha = Math.max(0.15, Math.min(1, Math.sin(p.pulse) * 0.5 + 0.5));
+          const r = p.size * 1.1;
+
+          ctx.save();
+          const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r * 3);
+          grad.addColorStop(0, '#ffffff');
+          grad.addColorStop(0.3, particleColor);
+          grad.addColorStop(1, 'transparent');
+
+          ctx.globalAlpha = currentAlpha;
+          ctx.fillStyle = grad;
+          ctx.shadowColor = particleColor;
+          ctx.shadowBlur = 14;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, r * 3, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        });
+      }
+
+      // MODE 4: STARDUST (4-pointed sparkling diamond stars)
+      else if (particleMode === 'stardust') {
+        particles.forEach(p => {
+          p.x += (p.speedX * 0.4 + particleWind * 0.3) * particleSpeed;
+          p.y += (p.speedY * 0.5) * particleSpeed;
+          p.angle += p.spin * 0.8;
+          p.pulse += p.pulseSpeed * 1.5;
+
+          if (p.y > height + 15) {
+            p.y = -15;
+            p.x = Math.random() * width;
+          }
+          if (p.x > width + 15) p.x = -15;
+          if (p.x < -15) p.x = width + 15;
+
+          const currentAlpha = Math.max(0.2, Math.min(1, Math.sin(p.pulse) * 0.5 + 0.5));
+          const s = p.size * 1.3;
+
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.angle);
+          ctx.globalAlpha = currentAlpha;
+          ctx.fillStyle = particleColor;
+          ctx.shadowColor = particleColor;
+          ctx.shadowBlur = 10;
+
+          ctx.beginPath();
+          ctx.moveTo(0, -s);
+          ctx.quadraticCurveTo(0, 0, s, 0);
+          ctx.quadraticCurveTo(0, 0, 0, s);
+          ctx.quadraticCurveTo(0, 0, -s, 0);
+          ctx.quadraticCurveTo(0, 0, 0, -s);
+          ctx.fill();
+          ctx.restore();
+        });
+      }
 
       animId = requestAnimationFrame(render);
     };
@@ -344,7 +453,7 @@ export default function RetroCanvas() {
       cancelAnimationFrame(animId);
       window.removeEventListener('resize', handleResize);
     };
-  }, [showPetals, petalDensity]);
+  }, [showPetals, particleMode, particleColor, petalDensity, particleSpeed, particleWind]);
 
   // Ambient Web Audio Soundscape Generator
   useEffect(() => {
@@ -611,7 +720,6 @@ export default function RetroCanvas() {
         <div className="retro-top-left-widget">
           {/* Greeting */}
           <div className="retro-greeting-row left-aligned">
-            <span className="retro-terminal-prompt">&gt;</span>
             {isEditingName ? (
               <div className="retro-name-edit-form">
                 <span className="retro-greeting-text">{greeting},</span>
@@ -650,16 +758,8 @@ export default function RetroCanvas() {
                 <span className="retro-greeting-text">
                   {greeting}, <strong className="retro-user-name">{userName}</strong>
                 </span>
-                <button 
-                  onClick={() => { setTempName(userName); setIsEditingName(true); }}
-                  className="retro-edit-name-btn"
-                  title="Đổi tên"
-                >
-                  <IoPencilOutline size={13} />
-                </button>
               </div>
             )}
-            <span className="retro-cursor-blink">_</span>
           </div>
 
           {/* Digital Clock Right Below Greeting */}
@@ -1156,13 +1256,14 @@ export default function RetroCanvas() {
                       {/* Canvas Graphics */}
                       <div className="settings-card-section">
                         <div className="settings-section-head">
-                          <span className="settings-section-title">HIỆU ỨNG ĐỒ HỌA ĐỘNG</span>
+                          <span className="settings-section-title">HỆ THỐNG HIỆU ỨNG HẠT PARTICLE ĐỘNG</span>
+                          <span className="settings-section-desc">Tùy chỉnh kiểu chuyển động hạt chân thực và màu sắc theo sở thích.</span>
                         </div>
 
                         <div className="settings-toggle-row">
                           <div className="toggle-label-wrap">
-                            <span className="toggle-main-label">Cánh hoa rơi & Đom đóm phát sáng</span>
-                            <span className="toggle-sub-label">Các hạt pixel hoa anh đào bay lơ lửng theo gió</span>
+                            <span className="toggle-main-label">Bật hiệu ứng hạt Particle</span>
+                            <span className="toggle-sub-label">Hiển thị các hạt chuyển động theo chiều gió thực tế</span>
                           </div>
                           <button 
                             className={`settings-toggle-switch ${showPetals ? 'active' : ''}`}
@@ -1177,25 +1278,118 @@ export default function RetroCanvas() {
                         </div>
 
                         {showPetals && (
-                          <div className="settings-slider-row">
-                            <div className="slider-label-col">
-                              <span className="slider-label">Mật độ hạt cánh hoa: {petalDensity} hạt</span>
-                              <span className="slider-sub">Số lượng cánh hoa xuất hiện cùng lúc trên màn hình</span>
+                          <>
+                            <div style={{ marginTop: 12, marginBottom: 6 }}>
+                              <span style={{ fontSize: 12, fontWeight: 700, color: '#ece8e1', textTransform: 'uppercase' }}>
+                                Kiểu hiệu ứng Particle:
+                              </span>
                             </div>
-                            <input 
-                              type="range" 
-                              min="20" 
-                              max="80" 
-                              step="5"
-                              value={petalDensity}
-                              onChange={(e) => {
-                                const val = parseInt(e.target.value, 10);
-                                setPetalDensity(val);
-                                localStorage.setItem('waveform_hub_petal_density', String(val));
-                              }}
-                              className="spotify-range-slider"
-                            />
-                          </div>
+
+                            <div className="particle-modes-grid">
+                              {[
+                                { id: 'sakura', icon: '🌸', name: 'Cánh hoa', desc: 'Hoa anh đào lượn sóng 3D' },
+                                { id: 'snow', icon: '❄️', name: 'Bông tuyết', desc: 'Bông tuyết 6 cánh pha lê' },
+                                { id: 'fireflies', icon: '✨', name: 'Đốm sáng', desc: 'Đom đóm phát quang mềm mại' },
+                                { id: 'stardust', icon: '💫', name: 'Bụi sao', desc: 'Sao kim cương lấp lánh' }
+                              ].map(m => (
+                                <div 
+                                  key={m.id}
+                                  className={`particle-mode-card ${particleMode === m.id ? 'selected' : ''}`}
+                                  onClick={() => {
+                                    setParticleMode(m.id as any);
+                                    localStorage.setItem('waveform_hub_particle_mode', m.id);
+                                  }}
+                                >
+                                  <span className="particle-mode-icon">{m.icon}</span>
+                                  <span className="particle-mode-name">{m.name}</span>
+                                  <span className="particle-mode-desc">{m.desc}</span>
+                                </div>
+                              ))}
+                            </div>
+
+                            <div style={{ marginTop: 14, marginBottom: 6 }}>
+                              <span style={{ fontSize: 12, fontWeight: 700, color: '#ece8e1', textTransform: 'uppercase' }}>
+                                Tùy chỉnh màu sắc Particle:
+                              </span>
+                            </div>
+
+                            <div className="particle-color-palette">
+                              {[
+                                { name: 'Spotify Green', hex: '#1ed760' },
+                                { name: 'Sakura Pink', hex: '#ff7597' },
+                                { name: 'Ice Cyan', hex: '#00f0ff' },
+                                { name: 'Solar Gold', hex: '#ffb703' },
+                                { name: 'Pure White', hex: '#ffffff' },
+                                { name: 'Valorant Red', hex: '#ff4655' },
+                                { name: 'Neon Violet', hex: '#a855f7' }
+                              ].map(c => (
+                                <button
+                                  key={c.hex}
+                                  className={`color-chip-btn ${particleColor.toLowerCase() === c.hex.toLowerCase() ? 'selected' : ''}`}
+                                  style={{ backgroundColor: c.hex }}
+                                  onClick={() => {
+                                    setParticleColor(c.hex);
+                                    localStorage.setItem('waveform_hub_particle_color', c.hex);
+                                  }}
+                                  title={c.name}
+                                />
+                              ))}
+
+                              <div className="color-picker-custom-wrap">
+                                <input 
+                                  type="color" 
+                                  value={particleColor}
+                                  onChange={(e) => {
+                                    setParticleColor(e.target.value);
+                                    localStorage.setItem('waveform_hub_particle_color', e.target.value);
+                                  }}
+                                  className="color-picker-input"
+                                  title="Chọn màu bất kỳ"
+                                />
+                                <span className="color-hex-label">{particleColor.toUpperCase()}</span>
+                              </div>
+                            </div>
+
+                            <div className="settings-slider-row" style={{ marginTop: 12 }}>
+                              <div className="slider-label-col">
+                                <span className="slider-label">Mật độ số lượng hạt: {petalDensity} hạt</span>
+                                <span className="slider-sub">Số lượng hạt hiển thị trên màn hình</span>
+                              </div>
+                              <input 
+                                type="range" 
+                                min="15" 
+                                max="100" 
+                                step="5"
+                                value={petalDensity}
+                                onChange={(e) => {
+                                  const val = parseInt(e.target.value, 10);
+                                  setPetalDensity(val);
+                                  localStorage.setItem('waveform_hub_petal_density', String(val));
+                                }}
+                                className="spotify-range-slider"
+                              />
+                            </div>
+
+                            <div className="settings-slider-row">
+                              <div className="slider-label-col">
+                                <span className="slider-label">Tốc độ rơi & chuyển động: {particleSpeed.toFixed(1)}x</span>
+                                <span className="slider-sub">Tốc độ bay và lượn của hạt</span>
+                              </div>
+                              <input 
+                                type="range" 
+                                min="0.4" 
+                                max="2.5" 
+                                step="0.1"
+                                value={particleSpeed}
+                                onChange={(e) => {
+                                  const val = parseFloat(e.target.value);
+                                  setParticleSpeed(val);
+                                  localStorage.setItem('waveform_hub_particle_speed', String(val));
+                                }}
+                                className="spotify-range-slider"
+                              />
+                            </div>
+                          </>
                         )}
 
                         <div className="settings-toggle-row">
