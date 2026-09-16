@@ -2457,6 +2457,7 @@ function AppContent() {
   return (
     <div className="app-container">
       {/* Spotify Top Header */}
+      {activeApp !== 'hub' && (
       <header className="top-header">
         <div className="top-header-left">
           <div 
@@ -2500,9 +2501,10 @@ function AppContent() {
           )}
         </div>
       </header>
+      )}
 
       {/* Main Layout containing Sidebar and Content Container */}
-      <div className={`app-main-layout ${activeApp !== 'music' ? 'no-player' : ''}`}>
+      <div className={`app-main-layout ${activeApp !== 'music' ? 'no-player' : ''} ${activeApp === 'hub' ? 'is-hub' : ''}`}>
         {activeApp === 'hub' && (
           <>
             <HubSidebar 

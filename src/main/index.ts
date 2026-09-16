@@ -1,7 +1,7 @@
 import { registerValorantIpcHandlers } from './valorant-ipc'
 import { registerGdIpcHandlers } from './gd-ipc'
 import { registerTftIpcHandlers } from './tft-ipc'
-import { app, BrowserWindow, shell, session, protocol, net, globalShortcut, Tray, Menu, nativeImage } from 'electron'
+import { app, BrowserWindow, shell, session, protocol, net, globalShortcut, Tray, Menu, nativeImage, nativeTheme } from 'electron'
 import path from 'path'
 import { pathToFileURL } from 'url'
 import { initDB } from './db'
@@ -43,6 +43,9 @@ function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
+    title: 'Waveform',
+    backgroundColor: '#090410',
+    darkTheme: true,
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -88,6 +91,7 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  nativeTheme.themeSource = 'dark'
   // Ensure the default music directory exists
   const musicDir = getMusicDirectory()
   if (!fs.existsSync(musicDir)) {

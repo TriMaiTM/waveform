@@ -1,6 +1,6 @@
+import React, { useState, useEffect } from 'react'
 import { SiValorant } from 'react-icons/si'
-import React from 'react'
-import { IoVolumeHighOutline } from 'react-icons/io5'
+import { IoChevronBackOutline, IoChevronForwardOutline, IoFlash } from 'react-icons/io5'
 import { usePlayer } from '../player/use-player'
 import spotifyLogo from '../../assets/spotify-logo.png'
 import tftLogo from '../../assets/teamfight-tactics-logo.png'
@@ -12,89 +12,186 @@ interface HubSidebarProps {
   trackCount?: number;
 }
 
+export interface AppOrderItem {
+  id: 'music' | 'tft' | 'gd' | 'valorant';
+  enabled: boolean;
+}
+
+export const DEFAULT_APP_ORDER: AppOrderItem[] = [
+  { id: 'music', enabled: true },
+  { id: 'tft', enabled: true },
+  { id: 'gd', enabled: true },
+  { id: 'valorant', enabled: true }
+];
+
+export function getStoredAppOrder(): AppOrderItem[] {
+  try {
+    const raw = localStorage.getItem('waveform_hub_app_order');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const ids = ['music', 'tft', 'gd', 'valorant'];
+        const existingIds = parsed.map((p: any) => p.id);
+        const complete = [...parsed];
+        ids.forEach(id => {
+          if (!existingIds.includes(id)) {
+            complete.push({ id, enabled: true });
+          }
+        });
+        return complete;
+      }
+    }
+  } catch (e) {}
+  return DEFAULT_APP_ORDER;
+}
+
 export default function HubSidebar({ activeApp, setActiveApp, trackCount = 0 }: HubSidebarProps) {
   const { currentTrack, isPlaying } = usePlayer();
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [appOrder, setAppOrder] = useState<AppOrderItem[]>(getStoredAppOrder);
 
-  return (
-    <aside className="hub-sidebar">
-      <nav className="hub-app-list">
-        {/* App 1: Spotify / Music Player */}
-        <button 
-          className={`hub-app-item ${activeApp === 'music' ? 'active' : ''}`}
-          onClick={() => setActiveApp('music')}
-          title="Mở ứng dụng nghe nhạc Spotify"
-        >
-          <div className="hub-app-icon-wrap music-theme">
-            <img src={spotifyLogo} alt="Spotify" className="hub-app-icon-img" />
-          </div>
-          <div className="hub-app-details">
-            <div className="hub-app-title-row">
-              <span className="hub-app-name">Spotify</span>
-              {isPlaying && (
-                <span className="hub-playing-badge" title="Đang phát nhạc ngầm">
-                  <IoVolumeHighOutline size={13} />
-                  <span>Đang phát</span>
-                </span>
+  useEffect(() => {
+    const handleUpdate = () => {
+      setAppOrder(getStoredAppOrder());
+    };
+    window.addEventListener('waveform-hub-settings-updated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+    return () => {
+      window.removeEventListener('waveform-hub-settings-updated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
+  }, []);
+
+  const renderAppItem = (id: 'music' | 'tft' | 'gd' | 'valorant') => {
+    switch (id) {
+      case 'music':
+        return (
+          <button 
+            key="music"
+            className={`hub-app-item ${activeApp === 'music' ? 'active' : ''}`}
+            onClick={() => setActiveApp('music')}
+            title="Spotify Music"
+          >
+            <div className="hub-app-icon-wrap">
+              <img src={spotifyLogo} alt="Spotify" className="hub-app-icon-img spotify" />
+              {isPlaying && isCollapsed && (
+                <div className="hub-sound-waves mini" title="Đang phát nhạc">
+                  <span className="hub-sound-bar bar-1"></span>
+                  <span className="hub-sound-bar bar-2"></span>
+                  <span className="hub-sound-bar bar-3"></span>
+                </div>
               )}
             </div>
-            <span className="hub-app-sub">
-              {currentTrack 
-                ? `${currentTrack.title} • ${currentTrack.artist || 'Unknown'}` 
-                : `${trackCount} bài hát trong thư viện`}
-            </span>
-          </div>
-        </button>
+            <div className="hub-app-details">
+              <div className="hub-app-title-row">
+                <span className="hub-app-name">Spotify</span>
+                {isPlaying && (
+                  <div className="hub-sound-waves" title="Đang phát nhạc">
+                    <span className="hub-sound-bar bar-1"></span>
+                    <span className="hub-sound-bar bar-2"></span>
+                    <span className="hub-sound-bar bar-3"></span>
+                  </div>
+                )}
+              </div>
+              <span className="hub-app-sub">
+                {currentTrack 
+                  ? `${currentTrack.title} • ${currentTrack.artist || 'Unknown'}` 
+                  : `${trackCount} bài hát trong thư viện`}
+              </span>
+            </div>
+          </button>
+        );
 
-        {/* App 2: Đấu Trường Chân Lý (TFT Hub) */}
-        <button 
-          className={`hub-app-item ${activeApp === 'tft' ? 'active' : ''}`}
-          onClick={() => setActiveApp('tft')}
-          title="Mở cẩm nang Đấu Trường Chân Lý (MetaTFT)"
-        >
-          <div className="hub-app-icon-wrap tft-theme">
-            <img src={tftLogo} alt="Teamfight Tactics" className="hub-app-icon-img" />
-          </div>
-          <div className="hub-app-details">
-            <div className="hub-app-title-row">
-              <span className="hub-app-name">Teamfight Tactics</span>
+      case 'tft':
+        return (
+          <button 
+            key="tft"
+            className={`hub-app-item ${activeApp === 'tft' ? 'active' : ''}`}
+            onClick={() => setActiveApp('tft')}
+            title="Teamfight Tactics"
+          >
+            <div className="hub-app-icon-wrap">
+              <img src={tftLogo} alt="Teamfight Tactics" className="hub-app-icon-img tft" />
             </div>
-            <span className="hub-app-sub">Latest TFT Comps</span>
-          </div>
-        </button>
+            <div className="hub-app-details">
+              <div className="hub-app-title-row">
+                <span className="hub-app-name">Teamfight Tactics</span>
+              </div>
+              <span className="hub-app-sub">Latest TFT Comps</span>
+            </div>
+          </button>
+        );
 
-        {/* App 3: Geometry Dash Demonlist */}
-        <button 
-          className={`hub-app-item ${activeApp === 'gd' ? 'active' : ''}`}
-          onClick={() => setActiveApp('gd')}
-          title="Mở bảng xếp hạng Geometry Dash Demonlist & Changelog"
-        >
-          <div className="hub-app-icon-wrap gd-theme">
-            <img src={gdLogo} alt="Geometry Dash Demonlist" className="hub-app-icon-img" />
-          </div>
-          <div className="hub-app-details">
-            <div className="hub-app-title-row">
-              <span className="hub-app-name">Demonlist</span>
+      case 'gd':
+        return (
+          <button 
+            key="gd"
+            className={`hub-app-item ${activeApp === 'gd' ? 'active' : ''}`}
+            onClick={() => setActiveApp('gd')}
+            title="Geometry Dash Demonlist"
+          >
+            <div className="hub-app-icon-wrap">
+              <img src={gdLogo} alt="Demonlist" className="hub-app-icon-img gd" />
             </div>
-            <span className="hub-app-sub">Extreme Demons & Changelog</span>
-          </div>
-        </button>
-              {/* App 4: Valorant Tracker */}
-        <button 
-          className={`hub-app-item ${activeApp === 'valorant' ? 'active' : ''}`}
-          onClick={() => setActiveApp('valorant')}
-          title="Mở Valorant Player Tracker"
-        >
-          <div className="hub-app-icon-wrap val-theme">
-            <SiValorant size={22} color="#ff4655" />
-          </div>
-          <div className="hub-app-details">
-            <div className="hub-app-title-row">
-              <span className="hub-app-name">Valorant</span>
+            <div className="hub-app-details">
+              <div className="hub-app-title-row">
+                <span className="hub-app-name">Demonlist</span>
+              </div>
+              <span className="hub-app-sub">Extreme Demons & Changelog</span>
             </div>
-            <span className="hub-app-sub">Player Stats & Rank Tracker</span>
-          </div>
+          </button>
+        );
+
+      case 'valorant':
+        return (
+          <button 
+            key="valorant"
+            className={`hub-app-item ${activeApp === 'valorant' ? 'active' : ''}`}
+            onClick={() => setActiveApp('valorant')}
+            title="Valorant Tracker"
+          >
+            <div className="hub-app-icon-wrap">
+              <SiValorant size={26} color="#ff4655" className="hub-app-icon-img valorant" />
+            </div>
+            <div className="hub-app-details">
+              <div className="hub-app-title-row">
+                <span className="hub-app-name">Valorant</span>
+              </div>
+              <span className="hub-app-sub">Player Stats & Rank Tracker</span>
+            </div>
+          </button>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <aside className={`hub-sidebar ${isCollapsed ? 'collapsed' : ''}`}>
+      {/* Sidebar Header with Waveform Brand Logo & Collapse toggle */}
+      <div className="hub-sidebar-header">
+        <div 
+          className="hub-brand-logo-btn" 
+          onClick={() => setActiveApp('hub')} 
+          title="Waveform Hub"
+        >
+          <IoFlash size={22} color="#1ed760" className="hub-brand-flash" />
+          {!isCollapsed && <span className="hub-brand-text">Waveform</span>}
+        </div>
+        <button 
+          className="hub-collapse-btn"
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          title={isCollapsed ? 'Mở rộng thanh bên' : 'Thu gọn thanh bên'}
+          aria-label={isCollapsed ? 'Mở rộng thanh bên' : 'Thu gọn thanh bên'}
+        >
+          {isCollapsed ? <IoChevronForwardOutline size={16} /> : <IoChevronBackOutline size={16} />}
         </button>
+      </div>
+
+      <nav className="hub-app-list">
+        {appOrder.filter(item => item.enabled).map(item => renderAppItem(item.id))}
       </nav>
     </aside>
-  )
+  );
 }
